@@ -3,6 +3,11 @@ uuid = "87ed4bf0-c935-4a67-83c3-2a03bee4197c"
 authors = ["Sebastian Pfitzner <pfitzseb@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Gumbo = "708ec375-b3d6-5a57-a7ce-8257bf98657a"
+
 [compat]
 julia = "1"
 
