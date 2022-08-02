@@ -31,3 +31,5 @@ MultiDocumenter.make(
     ]
 )
 ```
+
+![example](sample.png)
