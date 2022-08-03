@@ -12,7 +12,11 @@ NodeJS = "2bd173c7-0d6d-553b-b6af-13a54713934c"
 
 [compat]
 AbstractTrees = "0.4"
+Documenter = "0.27"
+Gumbo = "0.8"
+JSON = "0.20,0.21"
 julia = "1"
+NodeJS = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
