@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "flexsearch": "^0.7.21",
+    "highlight.js": "^10.5.0"
+  }
+}

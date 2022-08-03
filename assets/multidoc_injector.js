@@ -5,4 +5,4 @@ require(['jquery', 'headroom', 'headroom-jquery'], function($, Headroom) {
         "tolerance": {"up": 10, "down": 10},
         });
     })
-})
+});

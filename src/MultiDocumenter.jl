@@ -5,6 +5,8 @@ module MultiDocumenter
 
 import Documenter, Gumbo, AbstractTrees
 
+include("search.jl")
+
 abstract type NavElement end
 
 struct MultiDocRef <: NavElement
@@ -29,7 +31,9 @@ end
         docs::Vector{MultiDocRef};
         assets_dir,
         brand_image,
-        custom_stylesheets
+        custom_stylesheets = [],
+        custom_scripts = [],
+        custom_search = true
     )
 
 Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`.
@@ -44,17 +48,27 @@ function make(
         docs::Vector{MultiDocRef};
         assets_dir = nothing,
         brand_image::Union{Nothing,BrandImage} = nothing,
-        custom_stylesheets = []
+        custom_stylesheets = [],
+        custom_scripts = [],
+        custom_search = true
     )
 
     dir = make_output_structure(docs)
+    out_assets = joinpath(dir, "assets")
     if assets_dir !== nothing && isdir(assets_dir)
-        cp(assets_dir, joinpath(dir, "assets"))
+        cp(assets_dir, out_assets)
     end
-    inject_styles_and_global_navigation(dir, docs, brand_image, custom_stylesheets)
+    isdir(out_assets) || mkpath(out_assets)
+    cp(joinpath(@__DIR__, "..", "assets", "__default"), joinpath(out_assets, "__default"))
+
+    inject_styles_and_global_navigation(dir, docs, brand_image, custom_stylesheets, custom_scripts, custom_search)
+
+    if custom_search
+        build_search_index(dir)
+    end
 
     cp(dir, outdir; force = true)
-    rm(dir; force = true, recursive = true)
+    # rm(dir; force = true, recursive = true)
 
     return outdir
 end
@@ -76,7 +90,7 @@ function make_output_structure(docs::Vector)
     return dir
 end
 
-function make_global_nav(dir, docs, thispagepath, brand_image)
+function make_global_nav(dir, docs, thispagepath, brand_image, custom_search)
     nav = Gumbo.HTMLElement{:nav}([], Gumbo.NullNode(), Dict(
         "id" => "multi-page-nav"
     ))
@@ -108,6 +122,30 @@ function make_global_nav(dir, docs, thispagepath, brand_image)
         push!(li.children, a)
         push!(ul.children, li)
     end
+
+    if custom_search
+        ul = Gumbo.HTMLElement{:ul}([], nav, Dict(
+            "class" => "float-right"
+        ))
+        li = Gumbo.HTMLElement{:li}([], ul, Dict())
+        push!(ul.children, li)
+        div = Gumbo.HTMLElement{:div}([], li, Dict(
+            "class" => "search",
+        ))
+        push!(li.children, div)
+        input = Gumbo.HTMLElement{:input}([], div, Dict(
+            "id" => "search-input",
+            "placeholder" => "Search..."
+        ))
+        push!(div.children, input)
+        suggestions = Gumbo.HTMLElement{:ul}([], div, Dict(
+            "id" => "search-result-container",
+            "class" => "suggestions hidden"
+        ))
+        push!(div.children, suggestions)
+
+        push!(nav.children, ul)
+    end
     return nav
 end
 
@@ -135,32 +173,45 @@ function make_global_stylesheet(custom_stylesheets, path)
     return out
 end
 
-function headroom_injector()
-    return raw"""
-    require(['jquery', 'headroom', 'headroom-jquery'], function($, Headroom) {
-        $(document).ready(function() {
-            $('#multi-page-nav').headroom({
-            "tolerance": {"up": 10, "down": 10},
-            });
-        })
-    })
-    """
+function make_global_scripts(custom_scripts, path)
+    out = []
+
+    for script in custom_scripts
+        js = Gumbo.HTMLElement{:script}([], Gumbo.NullNode(), Dict(
+            "src" => joinpath(path, script),
+            "type" => "text/javascript",
+            "charset" => "utf-8"
+        ))
+        push!(out, js)
+    end
+
+    return out
+end
+
+function js_injector()
+    return read(joinpath(@__DIR__, "..", "assets", "multidoc_injector.js"), String)
 end
 
 function inject_styles_and_global_navigation(
         dir,
         docs::Vector{MultiDocRef},
         brand_image::BrandImage,
-        custom_stylesheets
+        custom_stylesheets,
+        custom_scripts,
+        custom_search
     )
 
+    if custom_search
+        pushfirst!(custom_scripts, joinpath("assets",  "__default", "flexsearch.bundle.js"))
+        pushfirst!(custom_scripts, joinpath("assets",  "__default", "search.js"))
+    end
 
     for (root, _, files) in walkdir(dir)
         for file in files
             path = joinpath(root, file)
             if file == "documenter.js"
                 open(path, "a") do io
-                    println(io, headroom_injector())
+                    println(io, js_injector())
                 end
                 continue
             end
@@ -169,11 +220,11 @@ function inject_styles_and_global_navigation(
 
             endswith(file, ".html") || continue
 
-
             islink(path) && continue
             isfile(path) || continue
 
             stylesheets = make_global_stylesheet(custom_stylesheets, relpath(dir, root))
+            scripts = make_global_scripts(custom_scripts, relpath(dir, root))
 
             page = read(path, String)
             doc = Gumbo.parsehtml(page)
@@ -188,9 +239,10 @@ function inject_styles_and_global_navigation(
                             stylesheet.parent = el
                             push!(el.children, stylesheet)
                         end
-
-                        # headroom_script.parent = el
-                        # push!(el.children, headroom_script)
+                        for script in scripts
+                            script.parent = el
+                            pushfirst!(el.children, script)
+                        end
                         injected += 1
                     elseif Gumbo.tag(el) == :body && !isempty(el.children)
                         documenter_div = first(el.children)
@@ -198,7 +250,7 @@ function inject_styles_and_global_navigation(
                             Gumbo.getattr(documenter_div, "id", "") == "documenter"
                             # inject global navigation as first element in body
 
-                            global_nav = make_global_nav(dir, docs, root, brand_image)
+                            global_nav = make_global_nav(dir, docs, root, brand_image, custom_search)
                             global_nav.parent = el
                             pushfirst!(el.children, global_nav)
                             injected += 1
