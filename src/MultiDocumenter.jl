@@ -5,7 +5,8 @@ module MultiDocumenter
 
 import Documenter, Gumbo, AbstractTrees
 
-include("search.jl")
+include("flexsearch.jl")
+include("stork.jl")
 
 abstract type NavElement end
 
@@ -33,7 +34,7 @@ end
         brand_image,
         custom_stylesheets = [],
         custom_scripts = [],
-        custom_search = true
+        custom_search = :flexsearch
     )
 
 Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`.
@@ -42,6 +43,9 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 - `brand_image` is a `BrandImage(path, imgpath)`, which is rendered as the leftmost
   item in the global navigation
 - `custom_stylesheets` is a `Vector{String}` of stylesheets injected into each page.
+- `custom_scripts` is a `Vector{String}` of scripts injected into each page.
+- `custom_search` disables Documenter's search and instead uses `:flexsearch` or `:stork`
+  for global search (set to `false`)
 """
 function make(
         outdir,
@@ -63,8 +67,10 @@ function make(
 
     inject_styles_and_global_navigation(dir, docs, brand_image, custom_stylesheets, custom_scripts, custom_search)
 
-    if custom_search
-        build_search_index(dir)
+    if custom_search === :stork
+        Stork.build_search_index(dir)
+    elseif custom_search === :flexsearch
+        FlexSearch.build_search_index(dir)
     end
 
     cp(dir, outdir; force = true)
@@ -123,7 +129,7 @@ function make_global_nav(dir, docs, thispagepath, brand_image, custom_search)
         push!(ul.children, li)
     end
 
-    if custom_search
+    if custom_search === :flexsearch
         ul = Gumbo.HTMLElement{:ul}([], nav, Dict(
             "class" => "float-right"
         ))
@@ -201,7 +207,7 @@ function inject_styles_and_global_navigation(
         custom_search
     )
 
-    if custom_search
+    if custom_search === :flexsearch
         pushfirst!(custom_scripts, joinpath("assets",  "__default", "flexsearch.bundle.js"))
         pushfirst!(custom_scripts, joinpath("assets",  "__default", "search.js"))
     end

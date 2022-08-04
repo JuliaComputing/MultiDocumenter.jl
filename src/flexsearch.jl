@@ -1,3 +1,4 @@
+module FlexSearch
 import Gumbo, JSON, AbstractTrees, NodeJS
 
 const ID = Ref(0)
@@ -81,14 +82,17 @@ function add_to_index(index, ref, file)
     push!(index.documents, doc)
 end
 
-function generate_index(root = joinpath(@__DIR__, "..", "__site"))
+function generate_index(root)
     print("Indexing html files: ")
     search_index = SearchIndex()
     for (r, _, files) in walkdir(root)
-        for file in files
-            if file == "index.html"
-                print(".")
-                add_to_index(search_index, chop(r, head = length(root), tail = 0), joinpath(r, file))
+        pathparts = splitpath(relpath(r, root))
+        if length(pathparts) >= 2 && pathparts[2] in ("stable", "dev")
+            for file in files
+                if file == "index.html"
+                    print(".")
+                    add_to_index(search_index, chop(r, head = length(root), tail = 0), joinpath(r, file))
+                end
             end
         end
     end
@@ -126,4 +130,5 @@ function build_search_index(root)
         run(`$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "flexsearch", "gensearch.js"))`)
     end
     return nothing
+end
 end

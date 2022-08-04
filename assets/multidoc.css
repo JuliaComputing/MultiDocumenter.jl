@@ -103,6 +103,8 @@ html {
     list-style-type: none;
     z-index: 10;
     right: 0;
+    max-height: max(50vh, 250px);
+    overflow-y: auto;
 }
 
 #multi-page-nav .suggestions .suggestion {

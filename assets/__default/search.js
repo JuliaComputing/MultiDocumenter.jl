@@ -1,5 +1,6 @@
 // custom search widget
 (function() {
+    const MAX_RESULTS = 40
     const flexsearchIdx = new FlexSearch.Document({
         document: {
             id: 'id',
@@ -64,7 +65,7 @@
 
                 console.time('search')
                 let results = flexsearchIdx.search(query, {
-                    limit: 10,
+                    limit: MAX_RESULTS,
                     enrich: true
                 })
                 console.timeEnd('search')
@@ -128,7 +129,7 @@
 
         console.log(results)
 
-        const children = results.slice(0, 9).map((r, i) => {
+        const children = results.slice(0, MAX_RESULTS - 1).map((r, i) => {
             const entry = document.createElement('li')
             entry.classList.add('suggestion')
             const link = document.createElement('a')
