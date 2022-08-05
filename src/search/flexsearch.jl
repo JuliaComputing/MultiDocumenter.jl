@@ -82,22 +82,45 @@ function add_to_index(index, ref, file)
     push!(index.documents, doc)
 end
 
-function generate_index(root)
-    print("Indexing html files: ")
+function generate_index(root, config)
     search_index = SearchIndex()
     for (r, _, files) in walkdir(root)
         pathparts = splitpath(relpath(r, root))
-        if length(pathparts) >= 2 && pathparts[2] in ("stable", "dev")
+        if length(pathparts) >= 2 && pathparts[2] in config.index_versions
             for file in files
                 if file == "index.html"
-                    print(".")
                     add_to_index(search_index, chop(r, head = length(root), tail = 0), joinpath(r, file))
                 end
             end
         end
     end
-    println()
     return search_index
+end
+
+function inject_script!(custom_scripts)
+    pushfirst!(custom_scripts, joinpath("assets",  "__default", "flexsearch.bundle.js"))
+    pushfirst!(custom_scripts, joinpath("assets",  "__default", "flexsearch_integration.js"))
+end
+
+function inject_styles!(custom_styles)
+    pushfirst!(custom_styles, joinpath("assets",  "__default", "flexsearch.css"))
+end
+
+function inject_html!(parent)
+    div = Gumbo.HTMLElement{:div}([], parent, Dict(
+        "class" => "search nav-item",
+    ))
+    push!(parent.children, div)
+    input = Gumbo.HTMLElement{:input}([], div, Dict(
+        "id" => "search-input",
+        "placeholder" => "Search..."
+    ))
+    push!(div.children, input)
+    suggestions = Gumbo.HTMLElement{:ul}([], div, Dict(
+        "id" => "search-result-container",
+        "class" => "suggestions hidden"
+    ))
+    push!(div.children, suggestions)
 end
 
 function to_json_index(index::SearchIndex, file)
@@ -121,13 +144,13 @@ function to_json_index(index::SearchIndex, file)
     end
 end
 
-function build_search_index(root)
+function build_search_index(root, config)
     ID[] = 0
-    idx = generate_index(root)
+    idx = generate_index(root, config)
     to_json_index(idx, joinpath(root, "index.json"))
     println("Writing flexsearch index:")
     cd(root) do
-        run(`$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "flexsearch", "gensearch.js"))`)
+        run(`$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", "gensearch.js"))`)
     end
     return nothing
 end
