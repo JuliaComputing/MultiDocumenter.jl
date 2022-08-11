@@ -19,18 +19,20 @@ function make_stork_config(root, config)
         "input" => Dict(
             "base_directory" => root,
             "html_selector" => "article",
-            "files" => files
+            "files" => files,
         ),
-        "output" => Dict(
-            "save_nearest_html_id" => true
-        )
+        "output" => Dict("save_nearest_html_id" => true),
     )
     for (r, _, fs) in walkdir(root)
         pathparts = splitpath(relpath(r, root))
         if length(pathparts) >= 2 && pathparts[2] in config.index_versions
             for file in fs
                 if file == "index.html"
-                    add_to_index!(files, chop(r, head = length(root), tail = 0), joinpath(r, file))
+                    add_to_index!(
+                        files,
+                        chop(r, head = length(root), tail = 0),
+                        joinpath(r, file),
+                    )
                 end
             end
         end
@@ -53,39 +55,42 @@ function add_to_index!(files, ref, path)
         end
     end
 
-    push!(files, Dict(
-        "path" => path,
-        "url" => ref,
-        "title" => title
-    ))
+    push!(files, Dict("path" => path, "url" => ref, "title" => title))
     return
 end
 
 function inject_script!(custom_scripts)
-    pushfirst!(custom_scripts, joinpath("assets",  "__default", "stork.js"))
-    pushfirst!(custom_scripts, joinpath("assets",  "__default", "stork_integration.js"))
+    pushfirst!(custom_scripts, joinpath("assets", "__default", "stork.js"))
+    pushfirst!(custom_scripts, joinpath("assets", "__default", "stork_integration.js"))
 end
 
 function inject_styles!(custom_styles)
-    pushfirst!(custom_styles, joinpath("assets",  "__default", "stork.css"))
+    pushfirst!(custom_styles, joinpath("assets", "__default", "stork.css"))
 end
 
 function inject_html!(parent)
-    div = Gumbo.HTMLElement{:div}([], parent, Dict(
-        "class" => "search stork-wrapper nav-item",
-    ))
+    div = Gumbo.HTMLElement{:div}(
+        [],
+        parent,
+        Dict("class" => "search stork-wrapper nav-item"),
+    )
     push!(parent.children, div)
-    input = Gumbo.HTMLElement{:input}([], div, Dict(
-        "id" => "search-input",
-        "class" => "stork-input",
-        "data-stork" => "multidocumenter",
-        "placeholder" => "Search..."
-    ))
+    input = Gumbo.HTMLElement{:input}(
+        [],
+        div,
+        Dict(
+            "id" => "search-input",
+            "class" => "stork-input",
+            "data-stork" => "multidocumenter",
+            "placeholder" => "Search...",
+        ),
+    )
     push!(div.children, input)
-    suggestions = Gumbo.HTMLElement{:div}([], div, Dict(
-        "class" => "stork-output",
-        "data-stork" => "multidocumenter-output"
-    ))
+    suggestions = Gumbo.HTMLElement{:div}(
+        [],
+        div,
+        Dict("class" => "stork-output", "data-stork" => "multidocumenter-output"),
+    )
     push!(div.children, suggestions)
 end
 end
