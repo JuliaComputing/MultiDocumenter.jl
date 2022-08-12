@@ -91,7 +91,13 @@ function make_output_structure(docs::Vector)
     dir = mktempdir()
 
     for doc in docs
-        cp(doc.upstream, joinpath(dir, doc.path))
+        outpath = joinpath(dir, doc.path)
+        cp(doc.upstream, outpath)
+
+        gitpath = joinpath(outpath, ".git")
+        if isdir(gitpath)
+            rm(gitpath, recursive=true)
+        end
     end
 
     open(joinpath(dir, "index.html"), "w") do io
