@@ -132,7 +132,10 @@ function make_global_nav(dir, docs, thispagepath, brand_image, search_engine, pr
         img = Gumbo.HTMLElement{:img}(
             [],
             a,
-            Dict("src" => relpath(joinpath(dir, brand_image.imagepath), thispagepath)),
+            Dict(
+                "src" => relpath(joinpath(dir, brand_image.imagepath), thispagepath),
+                "alt" => "Home",
+            ),
         )
         push!(a.children, img)
         push!(nav.children, a)
