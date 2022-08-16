@@ -125,6 +125,13 @@ function inject_html!(parent)
         Dict("id" => "search-result-container", "class" => "suggestions hidden"),
     )
     push!(div.children, suggestions)
+    keybinding = Gumbo.HTMLElement{:div}(
+        [],
+        div,
+        Dict("class" => "search-keybinding"),
+    )
+    push!(keybinding.children, Gumbo.HTMLText(keybinding, "/"))
+    push!(div.children, keybinding)
 end
 
 function to_json_index(index::SearchIndex, file)

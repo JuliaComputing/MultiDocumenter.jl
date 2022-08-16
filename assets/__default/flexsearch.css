@@ -3,9 +3,20 @@
     font-size: 16px;
 }
 
+#multi-page-nav .search .search-keybinding {
+    float: right;
+    width: 0;
+    transform: translateX(-1em);
+    color: #999;
+}
+
+#multi-page-nav .search:focus-within .search-keybinding {
+    display: none;
+}
+
 #multi-page-nav .search #search-input {
     border: 1px solid #666;
-    border-radius: 3px;
+    border-radius: 3.2px;
     color: #999;
     background-color: unset;
     height: 1.8rem;
