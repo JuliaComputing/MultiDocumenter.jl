@@ -155,7 +155,7 @@
         registerSearchListener()
 
         document.body.addEventListener('keydown', ev => {
-            if (ev.key === '/') {
+            if (document.activeElement === document.body && (ev.key === '/' || ev.key === 's')) {
                 document.getElementById('search-input').focus()
                 ev.preventDefault()
             }

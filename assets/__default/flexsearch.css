@@ -11,10 +11,13 @@
     height: 1.8rem;
     font-family: Glober;
     width: 20em;
+    font-size: 14px;
+    padding: 0 8px;
 }
 
 #multi-page-nav .search #search-input::placeholder {
     color: #999;
+    opacity: 1;
 }
 
 #multi-page-nav .search:focus-within #search-input {
@@ -22,6 +25,11 @@
     outline: none;
     box-shadow: none;
     color: #000;
+}
+
+.theme--documenter-dark #multi-page-nav .search:focus-within #search-input {
+    background-color: #202227;
+    color: #eee;
 }
 
 #multi-page-nav .search:focus-within .suggestions {
@@ -49,6 +57,16 @@
     overflow-y: auto;
 }
 
+.theme--documenter-dark #multi-page-nav .suggestions {
+    background: #2e3138;
+    border: 1px solid #5e6d6f;
+}
+
+.theme--documenter-dark #multi-page-nav .suggestion a:hover,
+.theme--documenter-dark #multi-page-nav .suggestion a:focus {
+    background-color: #202227;
+}
+
 #multi-page-nav .suggestions .suggestion {
     line-height: 1.4;
     border-radius: 4px;
@@ -66,7 +84,7 @@
 }
 
 #multi-page-nav .suggestion a:hover,
-.suggestion a:focus {
+#multi-page-nav .suggestion a:focus {
     background-color: #eee;
 }
 
