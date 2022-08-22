@@ -156,7 +156,7 @@ function make_global_nav(dir, docs, thispagepath, brand_image, search_engine, pr
             Dict(
                 "href" => string(rp, prettyurls ? "/" : "/index.html"),
                 "class" =>
-                    startswith(thispagepath, joinpath(dir, doc.path)) ?
+                    startswith(thispagepath, joinpath(dir, doc.path, "")) ? # need to force a trailing pathsep here
                     "nav-link active nav-item" : "nav-link nav-item",
             ),
         )
