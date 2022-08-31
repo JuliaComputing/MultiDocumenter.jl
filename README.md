@@ -4,31 +4,34 @@ Example usage:
 ```julia
 using MultiDocumenter
 
+clonedir = mktempdir()
+
 docs = [
-    MultiDocumenter.MultiDocRef(
-        upstream = "/home/pfitzseb/.julia/dev/Documenter/docs/build",
-        path = "documenter",
-        name = "Home"
+    ("JuliaDocs/Documenter.jl.git", "gh-pages") => MultiDocumenter.MultiDocRef(
+        upstream = joinpath(clonedir, "Documenter"),
+        path = "doc",
+        name = "Documenter"
     ),
-    MultiDocumenter.MultiDocRef(
-        upstream = "/home/pfitzseb/.julia/dev/Infiltrator/docs/build",
-        path = "infil",
+    ("JuliaDebug/Infiltrator.jl.git", "gh-pages") => MultiDocumenter.MultiDocRef(
+        upstream = joinpath(clonedir, "Infiltrator"),
+        path = "inf",
         name = "Infiltrator"
-    )
+    ),
 ]
 
+for ((remote, branch), docref) in docs
+    run(`git clone --depth 1 git@github.com:$remote --branch $branch --single-branch $(docref.upstream)`)
+end
+
+outpath = joinpath(@__DIR__, "out")
+
 MultiDocumenter.make(
-    joinpath(@__DIR__, "out"),
-    docs;
-    assets_dir = joinpath(@__DIR__, "assets"),
-    brand_image = MultiDocumenter.BrandImage(
-        "documenter/index.html",
-        "assets/brandimg.svg"
-    ),
-    custom_stylesheets = [
-        "assets/custom.css",
-        "assets/fonts/fonts.css",
-    ]
+    outpath,
+    collect(last.(docs));
+    search_engine = MultiDocumenter.SearchConfig(
+        index_versions = ["stable"],
+        engine = MultiDocumenter.FlexSearch
+    )
 )
 ```
 

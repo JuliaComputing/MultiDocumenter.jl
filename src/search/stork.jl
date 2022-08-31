@@ -1,9 +1,20 @@
 module Stork
 import Pkg.TOML
 import Gumbo, AbstractTrees
+import ..walk_outputs
 
-function build_search_index(root, config)
-    config = make_stork_config(root, config)
+function has_stork()
+    has_stork = false
+    try
+        has_stork = success(`stork -V`)
+    catch
+        has_stork = false
+    end
+    return has_stork
+end
+
+function build_search_index(root, docs, config)
+    config = make_stork_config(root, docs, config)
     config_path = joinpath(root, "stork.config.toml")
     index_path = joinpath(root, "stork.st")
     open(config_path, "w") do io
@@ -13,7 +24,7 @@ function build_search_index(root, config)
     return index_path
 end
 
-function make_stork_config(root, config)
+function make_stork_config(root, docs, config)
     files = []
     stork_config = Dict(
         "input" => Dict(
@@ -23,19 +34,9 @@ function make_stork_config(root, config)
         ),
         "output" => Dict("save_nearest_html_id" => true),
     )
-    for (r, _, fs) in walkdir(root)
-        pathparts = splitpath(relpath(r, root))
-        if length(pathparts) >= 2 && pathparts[2] in config.index_versions
-            for file in fs
-                if file == "index.html"
-                    add_to_index!(
-                        files,
-                        chop(r, head = length(root), tail = 0),
-                        joinpath(r, file),
-                    )
-                end
-            end
-        end
+
+    walk_outputs(root, docs, config.index_versions) do path, file
+        add_to_index!(files, path, file)
     end
 
     return stork_config
