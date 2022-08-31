@@ -5,7 +5,7 @@ using Test
     clonedir = mktempdir()
 
     docs = [
-        ("JuliaDebug/Infiltrator.jl.git", "gh-pages") => MultiDocumenter.MultiDocRef(
+        ("https://github.com/JuliaDebug/Infiltrator.jl.git", "gh-pages") => MultiDocumenter.MultiDocRef(
             upstream = joinpath(clonedir, "Infiltrator"),
             path = "inf",
             name = "Infiltrator"
@@ -13,7 +13,7 @@ using Test
     ]
 
     for ((remote, branch), docref) in docs
-        run(`git clone --depth 1 git@github.com:$remote --branch $branch --single-branch $(docref.upstream)`)
+        run(`git clone --depth 1 $remote --branch $branch --single-branch $(docref.upstream)`)
     end
 
     outpath = joinpath(@__DIR__, "out")
