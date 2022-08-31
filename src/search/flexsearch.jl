@@ -1,5 +1,6 @@
 module FlexSearch
 import Gumbo, JSON, AbstractTrees, NodeJS
+import ..walk_outputs
 
 const ID = Ref(0)
 
@@ -61,7 +62,7 @@ function add_fragment(doc, el)
     end
 end
 
-function add_to_index(index, ref, file)
+function add_to_index!(index, ref, file)
     content = read(file, String)
     html = Gumbo.parsehtml(content)
 
@@ -82,22 +83,12 @@ function add_to_index(index, ref, file)
     push!(index.documents, doc)
 end
 
-function generate_index(root, config)
+function generate_index(root, docs, config)
     search_index = SearchIndex()
-    for (r, _, files) in walkdir(root)
-        pathparts = splitpath(relpath(r, root))
-        if length(pathparts) >= 2 && pathparts[2] in config.index_versions
-            for file in files
-                if file == "index.html"
-                    add_to_index(
-                        search_index,
-                        chop(r, head = length(root), tail = 0),
-                        joinpath(r, file),
-                    )
-                end
-            end
-        end
+    walk_outputs(root, docs, config.index_versions) do path, file
+        add_to_index!(search_index, path, file)
     end
+
     return search_index
 end
 
@@ -160,9 +151,9 @@ function to_json_index(index::SearchIndex, file)
     end
 end
 
-function build_search_index(root, config)
+function build_search_index(root, docs, config)
     ID[] = 0
-    idx = generate_index(root, config)
+    idx = generate_index(root, docs, config)
     to_json_index(idx, joinpath(root, "index.json"))
     println("Writing flexsearch index:")
     cd(root) do

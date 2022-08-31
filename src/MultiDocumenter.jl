@@ -1,13 +1,13 @@
 module MultiDocumenter
 
-import Documenter, Gumbo, AbstractTrees
-
-include("search/flexsearch.jl")
-include("search/stork.jl")
+import Gumbo, AbstractTrees
 
 """
     SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch)
 
+`index_versions` is a vector of relative paths used for generating the search index.
+`engine` may be `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`, or a module that conforms
+to the expected API.
 """
 Base.@kwdef mutable struct SearchConfig
     index_versions = ["stable"]
@@ -30,6 +30,28 @@ function MultiDocRef(; upstream, name, path)
     MultiDocRef(upstream, path, name)
 end
 
+function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
+    for ref in docs
+        p = joinpath(root, ref.path)
+        for dir in dirs
+            dirpath = joinpath(p, dir)
+            isdir(dirpath) || continue
+            for (r, _, files) in walkdir(dirpath)
+                for file in files
+                    file == "index.html" || continue
+
+                    f(chop(r, head = length(root), tail = 0), joinpath(r, file))
+                end
+            end
+        end
+    end
+end
+
+include("search/flexsearch.jl")
+include("search/stork.jl")
+
+const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable"], engine = FlexSearch)
+
 """
     make(
         outdir,
@@ -49,7 +71,7 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
   item in the global navigation
 - `custom_stylesheets` is a `Vector{String}` of stylesheets injected into each page.
 - `custom_scripts` is a `Vector{String}` of scripts injected into each page.
-- `search_engine` inserts a global search bar. See [`SearchConfig`](@ref) for more details.
+- `search_engine` inserts a global search bar if not `false`. See [`SearchConfig`](@ref) for more details.
 - `prettyurls` removes all `index.html` suffixes from links in the global navigation.
 """
 function make(
@@ -59,7 +81,7 @@ function make(
     brand_image::Union{Nothing,BrandImage} = nothing,
     custom_stylesheets = [],
     custom_scripts = [],
-    search_engine = SearchConfig(index_versions = ["stable"], engine = FlexSearch),
+    search_engine = DEFAULT_ENGINE,
     prettyurls = true
 )
 
@@ -70,6 +92,13 @@ function make(
     end
     isdir(out_assets) || mkpath(out_assets)
     cp(joinpath(@__DIR__, "..", "assets", "__default"), joinpath(out_assets, "__default"))
+
+    if search_engine != false
+        if search_engine.engine == Stork && !Stork.has_stork()
+            @warn "stork binary not found. Falling back to flexsearch as search_engine."
+            search_engine = DEFAULT_ENGINE
+        end
+    end
 
     inject_styles_and_global_navigation(
         dir,
@@ -82,7 +111,7 @@ function make(
     )
 
     if search_engine != false
-        search_engine.engine.build_search_index(dir, search_engine)
+        search_engine.engine.build_search_index(dir, docs, search_engine)
     end
 
     cp(dir, outdir; force = true)
@@ -215,10 +244,11 @@ function js_injector()
     return read(joinpath(@__DIR__, "..", "assets", "multidoc_injector.js"), String)
 end
 
+
 function inject_styles_and_global_navigation(
     dir,
     docs::Vector{MultiDocRef},
-    brand_image::BrandImage,
+    brand_image,
     custom_stylesheets,
     custom_scripts,
     search_engine,
@@ -273,16 +303,15 @@ function inject_styles_and_global_navigation(
                         documenter_div = first(el.children)
                         if documenter_div isa Gumbo.HTMLElement &&
                            Gumbo.getattr(documenter_div, "id", "") == "documenter"
-                            # inject global navigation as first element in body
-
-                            global_nav =
-                                make_global_nav(dir, docs, root, brand_image, search_engine, prettyurls)
-                            global_nav.parent = el
-                            pushfirst!(el.children, global_nav)
-                            injected += 1
-                        else
-                            @warn "Could not inject global nav into $path."
+                           @debug "Could not detect Documenter page layout in $path. This may be due to an old version of Documenter."
                         end
+                        # inject global navigation as first element in body
+
+                        global_nav =
+                            make_global_nav(dir, docs, root, brand_image, search_engine, prettyurls)
+                        global_nav.parent = el
+                        pushfirst!(el.children, global_nav)
+                        injected += 1
                     end
                 end
             end
