@@ -1,6 +1,8 @@
 # MultiDocumenter
 
-Example usage:
+This package aggregates [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl) documentation from multiple sources into one page with a global search bar.
+
+## Example usage
 ```julia
 using MultiDocumenter
 
