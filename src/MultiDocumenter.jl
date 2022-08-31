@@ -5,12 +5,13 @@ import Gumbo, AbstractTrees
 """
     SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch)
 
-`index_versions` is a vector of relative paths used for generating the search index.
+`index_versions` is a vector of relative paths used for generating the search index. Only
+the first matching path is considered.
 `engine` may be `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`, or a module that conforms
-to the expected API.
+to the expected API (which is currently undocumented).
 """
 Base.@kwdef mutable struct SearchConfig
-    index_versions = ["stable"]
+    index_versions = ["stable", "dev"]
     engine = FlexSearch
 end
 
@@ -43,6 +44,7 @@ function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
                     f(chop(r, head = length(root), tail = 0), joinpath(r, file))
                 end
             end
+            break
         end
     end
 end
@@ -50,7 +52,7 @@ end
 include("search/flexsearch.jl")
 include("search/stork.jl")
 
-const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable"], engine = FlexSearch)
+const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine = FlexSearch)
 
 """
     make(
