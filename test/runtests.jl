@@ -22,7 +22,7 @@ using Test
         outpath,
         collect(last.(docs));
         search_engine = MultiDocumenter.SearchConfig(
-            index_versions = ["stable"],
+            index_versions = ["stable", "dev"],
             engine = MultiDocumenter.FlexSearch
         )
     )
@@ -42,6 +42,8 @@ using Test
         @test !isempty(store_content)
         @test occursin("Infiltrator.jl", store_content)
         @test occursin("@infiltrate", store_content)
+        @test occursin("/inf/stable/", store_content)
+        @test !occursin("/inf/dev/", store_content)
     end
 
     rm(outpath, recursive=true, force=true)
