@@ -22,7 +22,7 @@ docs = [
 ]
 
 for ((remote, branch), docref) in docs
-    run(`git clone --depth 1 git@github.com:$remote --branch $branch --single-branch $(docref.upstream)`)
+    run(`git clone --depth 1 https://github.com/$remote --branch $branch --single-branch $(docref.upstream)`)
 end
 
 outpath = joinpath(@__DIR__, "out")
