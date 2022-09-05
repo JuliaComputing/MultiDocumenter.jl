@@ -21,8 +21,13 @@ docs = [
     ),
 ]
 
+# using SSH for cloning is suggested when you're dealing with private repos, because
+# an ssh-agent will handle your keys for you
+# prefix = "git@github.com:"
+prefix = "https://github.com/"
+
 for ((remote, branch), docref) in docs
-    run(`git clone --depth 1 git@github.com:$remote --branch $branch --single-branch $(docref.upstream)`)
+    run(`git clone --depth 1 $prefix$remote --branch $branch --single-branch $(docref.upstream)`)
 end
 
 outpath = joinpath(@__DIR__, "out")
