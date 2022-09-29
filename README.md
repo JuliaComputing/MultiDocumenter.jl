@@ -24,7 +24,7 @@ docs = [
     ),
 ]
 
-for ((remote, branch, prefix), docref) in docs
+for ((remote, branch, use_ssh), docref) in docs
     prefix = use_ssh ? "git@github.com:" : "https://github.com/"
     run(`git clone --depth 1 $prefix$remote --branch $branch --single-branch $(docref.upstream)`)
 end
