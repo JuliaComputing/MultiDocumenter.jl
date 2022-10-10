@@ -181,6 +181,32 @@ function make_output_structure(docs::Vector{MultiDocRef}, prettyurls)
     return dir
 end
 
+function insert_multidocref_html!(navitems, doc, dir, thispagepath, prettyurls)
+    path = joinpath(dir, doc.path)
+    if !isfile(joinpath(path, "index.html"))
+        stable = joinpath(path, "stable")
+        dev = joinpath(path, "dev")
+        if isfile(joinpath(stable, "index.html"))
+            path = stable
+        elseif isfile(joinpath(dev, "index.html"))
+            path = dev
+        end
+    end
+    rp = relpath(path, thispagepath)
+    a = Gumbo.HTMLElement{:a}(
+        [],
+        navitems,
+        Dict(
+            "href" => string(rp, prettyurls ? "/" : "/index.html"),
+            "class" =>
+                startswith(thispagepath, joinpath(dir, doc.path, "")) ? # need to force a trailing pathsep here
+                "nav-link active nav-item" : "nav-link nav-item",
+        ),
+    )
+    push!(a.children, Gumbo.HTMLText(a, doc.name))
+    push!(navitems.children, a)
+end
+
 function make_global_nav(
     dir,
     docs::Vector,
@@ -221,19 +247,7 @@ function make_global_nav(
 
     for doc in docs
         if doc isa MultiDocRef
-            rp = relpath(joinpath(dir, doc.path), thispagepath)
-            a = Gumbo.HTMLElement{:a}(
-                [],
-                navitems,
-                Dict(
-                    "href" => string(rp, prettyurls ? "/" : "/index.html"),
-                    "class" =>
-                        startswith(thispagepath, joinpath(dir, doc.path, "")) ? # need to force a trailing pathsep here
-                        "nav-link active nav-item" : "nav-link nav-item",
-                ),
-            )
-            push!(a.children, Gumbo.HTMLText(a, doc.name))
-            push!(navitems.children, a)
+            insert_multidocref_html!(navitems, doc, dir, thispagepath, prettyurls)
         else # doc isa DropdownNav
             div = Gumbo.HTMLElement{:div}(
                 [],
@@ -248,20 +262,8 @@ function make_global_nav(
             push!(navitems.children, div)
 
             for doc in doc.children
-                rp = relpath(joinpath(dir, doc.path), thispagepath)
                 li = Gumbo.HTMLElement{:li}([], ul, Dict())
-                a = Gumbo.HTMLElement{:a}(
-                    [],
-                    li,
-                    Dict(
-                        "href" => string(rp, prettyurls ? "/" : "/index.html"),
-                        "class" =>
-                            startswith(thispagepath, joinpath(dir, doc.path, "")) ? # need to force a trailing pathsep here
-                            "nav-link active nav-item" : "nav-link nav-item",
-                    ),
-                )
-                push!(a.children, Gumbo.HTMLText(a, doc.name))
-                push!(li.children, a)
+                insert_multidocref_html!(li, doc, dir, thispagepath, prettyurls)
                 push!(ul.children, li)
             end
         end

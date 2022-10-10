@@ -59,6 +59,6 @@ using Test
         @test !occursin("/inf/dev/", store_content)
     end
 
-    # rm(outpath, recursive=true, force=true)
+    rm(outpath, recursive=true, force=true)
     rm(clonedir, recursive=true, force=true)
 end
