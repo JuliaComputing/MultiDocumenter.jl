@@ -61,12 +61,12 @@ function add_to_index!(files, ref, path)
 end
 
 function inject_script!(custom_scripts)
-    pushfirst!(custom_scripts, joinpath("assets", "__default", "stork.js"))
-    pushfirst!(custom_scripts, joinpath("assets", "__default", "stork_integration.js"))
+    pushfirst!(custom_scripts, joinpath("assets", "default", "stork.js"))
+    pushfirst!(custom_scripts, joinpath("assets", "default", "stork_integration.js"))
 end
 
 function inject_styles!(custom_styles)
-    pushfirst!(custom_styles, joinpath("assets", "__default", "stork.css"))
+    pushfirst!(custom_styles, joinpath("assets", "default", "stork.css"))
 end
 
 function inject_html!(parent)

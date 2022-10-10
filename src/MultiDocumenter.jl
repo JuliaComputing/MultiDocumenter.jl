@@ -93,7 +93,7 @@ function make(
         cp(assets_dir, out_assets)
     end
     isdir(out_assets) || mkpath(out_assets)
-    cp(joinpath(@__DIR__, "..", "assets", "__default"), joinpath(out_assets, "__default"))
+    cp(joinpath(@__DIR__, "..", "assets", "default"), joinpath(out_assets, "default"))
 
     if search_engine != false
         if search_engine.engine == Stork && !Stork.has_stork()
@@ -261,7 +261,7 @@ function inject_styles_and_global_navigation(
         search_engine.engine.inject_script!(custom_scripts)
         search_engine.engine.inject_styles!(custom_stylesheets)
     end
-    pushfirst!(custom_stylesheets, joinpath("assets", "__default", "multidoc.css"))
+    pushfirst!(custom_stylesheets, joinpath("assets", "default", "multidoc.css"))
 
     for (root, _, files) in walkdir(dir)
         for file in files

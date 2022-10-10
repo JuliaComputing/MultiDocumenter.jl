@@ -93,12 +93,12 @@ function generate_index(root, docs, config)
 end
 
 function inject_script!(custom_scripts)
-    pushfirst!(custom_scripts, joinpath("assets", "__default", "flexsearch.bundle.js"))
-    pushfirst!(custom_scripts, joinpath("assets", "__default", "flexsearch_integration.js"))
+    pushfirst!(custom_scripts, joinpath("assets", "default", "flexsearch.bundle.js"))
+    pushfirst!(custom_scripts, joinpath("assets", "default", "flexsearch_integration.js"))
 end
 
 function inject_styles!(custom_styles)
-    pushfirst!(custom_styles, joinpath("assets", "__default", "flexsearch.css"))
+    pushfirst!(custom_styles, joinpath("assets", "default", "flexsearch.css"))
 end
 
 function inject_html!(parent)
