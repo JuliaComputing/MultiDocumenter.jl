@@ -9,31 +9,35 @@ using MultiDocumenter
 clonedir = mktempdir()
 
 docs = [
-    ("JuliaDocs/Documenter.jl.git", "gh-pages", false) => MultiDocumenter.MultiDocRef(
-        upstream = joinpath(clonedir, "Documenter"),
-        path = "doc",
-        name = "Documenter"
-    ),
-    # using SSH for cloning is suggested when you're dealing with private repos, because
-    # an ssh-agent will handle your keys for you
-    # ("JuliaDebug/Infiltrator.jl.git", "gh-pages", true) => MultiDocumenter.MultiDocRef(
-    ("JuliaDebug/Infiltrator.jl.git", "gh-pages", false) => MultiDocumenter.MultiDocRef(
-        upstream = joinpath(clonedir, "Infiltrator"),
-        path = "inf",
-        name = "Infiltrator"
+    MultiDocumenter.DropdownNav("Debugging", [
+        MultiDocumenter.MultiDocRef(
+            upstream = joinpath(clonedir, "Infiltrator"),
+            path = "inf",
+            name = "Infiltrator",
+            giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
+        ),
+        MultiDocumenter.MultiDocRef(
+            upstream = joinpath(clonedir, "JuliaInterpreter"),
+            path = "debug",
+            name = "JuliaInterpreter",
+            giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
+        ),
+    ]),
+    MultiDocumenter.MultiDocRef(
+        upstream = joinpath(clonedir, "DataSets"),
+        path = "data",
+        name = "DataSets",
+        giturl = "https://github.com/JuliaComputing/DataSets.jl.git",
+        # or use ssh instead for private repos:
+        # giturl = "git@github.com:JuliaComputing/DataSets.jl.git",
     ),
 ]
-
-for ((remote, branch, use_ssh), docref) in docs
-    prefix = use_ssh ? "git@github.com:" : "https://github.com/"
-    run(`git clone --depth 1 $prefix$remote --branch $branch --single-branch $(docref.upstream)`)
-end
 
 outpath = joinpath(@__DIR__, "out")
 
 MultiDocumenter.make(
     outpath,
-    collect(last.(docs));
+    docs;
     search_engine = MultiDocumenter.SearchConfig(
         index_versions = ["stable"],
         engine = MultiDocumenter.FlexSearch

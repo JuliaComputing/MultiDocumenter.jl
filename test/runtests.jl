@@ -5,22 +5,35 @@ using Test
     clonedir = mktempdir()
 
     docs = [
-        ("https://github.com/JuliaDebug/Infiltrator.jl.git", "gh-pages") => MultiDocumenter.MultiDocRef(
-            upstream = joinpath(clonedir, "Infiltrator"),
-            path = "inf",
-            name = "Infiltrator"
+        MultiDocumenter.DropdownNav("Debugging", [
+            MultiDocumenter.MultiDocRef(
+                upstream = joinpath(clonedir, "Infiltrator"),
+                path = "inf",
+                name = "Infiltrator",
+                giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
+            ),
+            MultiDocumenter.MultiDocRef(
+                upstream = joinpath(clonedir, "JuliaInterpreter"),
+                path = "debug",
+                name = "JuliaInterpreter",
+                giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
+            ),
+        ]),
+        MultiDocumenter.MultiDocRef(
+            upstream = joinpath(clonedir, "DataSets"),
+            path = "data",
+            name = "DataSets",
+            giturl = "https://github.com/JuliaComputing/DataSets.jl.git",
+            # or use ssh instead for private repos:
+            # giturl = "git@github.com:JuliaComputing/DataSets.jl.git",
         ),
     ]
-
-    for ((remote, branch), docref) in docs
-        run(`git clone --depth 1 $remote --branch $branch --single-branch $(docref.upstream)`)
-    end
 
     outpath = joinpath(@__DIR__, "out")
 
     MultiDocumenter.make(
         outpath,
-        collect(last.(docs));
+        docs;
         search_engine = MultiDocumenter.SearchConfig(
             index_versions = ["stable", "dev"],
             engine = MultiDocumenter.FlexSearch
@@ -46,6 +59,6 @@ using Test
         @test !occursin("/inf/dev/", store_content)
     end
 
-    rm(outpath, recursive=true, force=true)
+    # rm(outpath, recursive=true, force=true)
     rm(clonedir, recursive=true, force=true)
 end
