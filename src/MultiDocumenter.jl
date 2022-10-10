@@ -20,15 +20,24 @@ struct MultiDocRef
 
     path::String
     name::String
+
+    # these are not actually used internally
+    giturl::String
+    branch::String
+end
+
+function MultiDocRef(; upstream, name, path, giturl = "", branch = "gh-pages")
+    MultiDocRef(upstream, path, name, giturl, branch)
+end
+
+struct DropdownNav
+    name::String
+    children::Vector{MultiDocRef}
 end
 
 struct BrandImage
     path::String
     imagepath::String
-end
-
-function MultiDocRef(; upstream, name, path)
-    MultiDocRef(upstream, path, name)
 end
 
 function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
@@ -78,16 +87,17 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 """
 function make(
     outdir,
-    docs::Vector{MultiDocRef};
+    docs::Vector;
     assets_dir = nothing,
     brand_image::Union{Nothing,BrandImage} = nothing,
     custom_stylesheets = [],
     custom_scripts = [],
     search_engine = DEFAULT_ENGINE,
-    prettyurls = true
+    prettyurls = true,
 )
+    maybe_clone(flatten_multidocrefs(docs))
 
-    dir = make_output_structure(docs, prettyurls)
+    dir = make_output_structure(flatten_multidocrefs(docs), prettyurls)
     out_assets = joinpath(dir, "assets")
     if assets_dir !== nothing && isdir(assets_dir)
         cp(assets_dir, out_assets)
@@ -109,11 +119,11 @@ function make(
         custom_stylesheets,
         custom_scripts,
         search_engine,
-        prettyurls
+        prettyurls,
     )
 
     if search_engine != false
-        search_engine.engine.build_search_index(dir, docs, search_engine)
+        search_engine.engine.build_search_index(dir, flatten_multidocrefs(docs), search_engine)
     end
 
     cp(dir, outdir; force = true)
@@ -122,7 +132,30 @@ function make(
     return outdir
 end
 
-function make_output_structure(docs::Vector, prettyurls)
+function flatten_multidocrefs(docs::Vector)
+    out = MultiDocRef[]
+    for doc in docs
+        if doc isa MultiDocRef
+            push!(out, doc)
+        else
+            for doc in doc.children
+                push!(out, doc)
+            end
+        end
+    end
+    out
+end
+
+function maybe_clone(docs::Vector{MultiDocRef})
+    for doc in docs
+        if !isdir(doc.upstream)
+            @info "Upstream at $(doc.upstream) does not exist. `git clone`ing `$(doc.giturl)#$(doc.branch)`"
+            run(`git clone --depth 1 $(doc.giturl) --branch $(doc.branch) --single-branch $(doc.upstream)`)
+        end
+    end
+end
+
+function make_output_structure(docs::Vector{MultiDocRef}, prettyurls)
     dir = mktempdir()
 
     for doc in docs
@@ -131,7 +164,7 @@ function make_output_structure(docs::Vector, prettyurls)
 
         gitpath = joinpath(outpath, ".git")
         if isdir(gitpath)
-            rm(gitpath, recursive=true)
+            rm(gitpath, recursive = true)
         end
     end
 
@@ -148,7 +181,14 @@ function make_output_structure(docs::Vector, prettyurls)
     return dir
 end
 
-function make_global_nav(dir, docs, thispagepath, brand_image, search_engine, prettyurls)
+function make_global_nav(
+    dir,
+    docs::Vector,
+    thispagepath,
+    brand_image,
+    search_engine,
+    prettyurls,
+)
     nav = Gumbo.HTMLElement{:nav}([], Gumbo.NullNode(), Dict("id" => "multi-page-nav"))
 
     if brand_image !== nothing
@@ -180,19 +220,51 @@ function make_global_nav(dir, docs, thispagepath, brand_image, search_engine, pr
     push!(nav.children, navitems)
 
     for doc in docs
-        rp = relpath(joinpath(dir, doc.path), thispagepath)
-        a = Gumbo.HTMLElement{:a}(
-            [],
-            navitems,
-            Dict(
-                "href" => string(rp, prettyurls ? "/" : "/index.html"),
-                "class" =>
-                    startswith(thispagepath, joinpath(dir, doc.path, "")) ? # need to force a trailing pathsep here
-                    "nav-link active nav-item" : "nav-link nav-item",
-            ),
-        )
-        push!(a.children, Gumbo.HTMLText(a, doc.name))
-        push!(navitems.children, a)
+        if doc isa MultiDocRef
+            rp = relpath(joinpath(dir, doc.path), thispagepath)
+            a = Gumbo.HTMLElement{:a}(
+                [],
+                navitems,
+                Dict(
+                    "href" => string(rp, prettyurls ? "/" : "/index.html"),
+                    "class" =>
+                        startswith(thispagepath, joinpath(dir, doc.path, "")) ? # need to force a trailing pathsep here
+                        "nav-link active nav-item" : "nav-link nav-item",
+                ),
+            )
+            push!(a.children, Gumbo.HTMLText(a, doc.name))
+            push!(navitems.children, a)
+        else # doc isa DropdownNav
+            div = Gumbo.HTMLElement{:div}(
+                [],
+                navitems,
+                Dict("class" => "nav-dropdown"),
+            )
+            span = Gumbo.HTMLElement{:span}([], div, Dict("class" => "nav-item dropdown-label"))
+            push!(div.children, span)
+            push!(span.children, Gumbo.HTMLText(div, doc.name))
+            ul = Gumbo.HTMLElement{:ul}([], div, Dict("class" => "nav-dropdown-container"))
+            push!(div.children, ul)
+            push!(navitems.children, div)
+
+            for doc in doc.children
+                rp = relpath(joinpath(dir, doc.path), thispagepath)
+                li = Gumbo.HTMLElement{:li}([], ul, Dict())
+                a = Gumbo.HTMLElement{:a}(
+                    [],
+                    li,
+                    Dict(
+                        "href" => string(rp, prettyurls ? "/" : "/index.html"),
+                        "class" =>
+                            startswith(thispagepath, joinpath(dir, doc.path, "")) ? # need to force a trailing pathsep here
+                            "nav-link active nav-item" : "nav-link nav-item",
+                    ),
+                )
+                push!(a.children, Gumbo.HTMLText(a, doc.name))
+                push!(li.children, a)
+                push!(ul.children, li)
+            end
+        end
     end
     if search_engine != false
         search_engine.engine.inject_html!(navitems)
@@ -249,12 +321,12 @@ end
 
 function inject_styles_and_global_navigation(
     dir,
-    docs::Vector{MultiDocRef},
+    docs::Vector,
     brand_image,
     custom_stylesheets,
     custom_scripts,
     search_engine,
-    prettyurls
+    prettyurls,
 )
 
     if search_engine != false
@@ -283,7 +355,10 @@ function inject_styles_and_global_navigation(
 
 
             page = read(path, String)
-            if startswith(page, "<!--This file is automatically generated by Documenter.jl-->")
+            if startswith(
+                page,
+                "<!--This file is automatically generated by Documenter.jl-->",
+            )
                 continue
             end
             doc = Gumbo.parsehtml(page)
@@ -307,12 +382,18 @@ function inject_styles_and_global_navigation(
                         documenter_div = first(el.children)
                         if documenter_div isa Gumbo.HTMLElement &&
                            Gumbo.getattr(documenter_div, "id", "") == "documenter"
-                           @debug "Could not detect Documenter page layout in $path. This may be due to an old version of Documenter."
+                            @debug "Could not detect Documenter page layout in $path. This may be due to an old version of Documenter."
                         end
                         # inject global navigation as first element in body
 
-                        global_nav =
-                            make_global_nav(dir, docs, root, brand_image, search_engine, prettyurls)
+                        global_nav = make_global_nav(
+                            dir,
+                            docs,
+                            root,
+                            brand_image,
+                            search_engine,
+                            prettyurls,
+                        )
                         global_nav.parent = el
                         pushfirst!(el.children, global_nav)
                         injected += 1

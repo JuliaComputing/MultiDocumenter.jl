@@ -15,5 +15,10 @@ require(["jquery"], function ($) {
           .getElementById("nav-items")
           .classList.toggle("hidden-on-mobile");
       });
+      Array.prototype.map.call(document.getElementsByClassName("dropdown-label"), function (el) {
+      el.addEventListener("click", function () {
+        el.parentElement.classList.toggle("nav-expanded")
+      })
+    })
   });
 });
