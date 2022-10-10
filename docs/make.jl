@@ -39,12 +39,9 @@ MultiDocumenter.make(
 )
 
 gitroot = normpath(joinpath(@__DIR__, ".."))
-try
-    run(`git checkout gh-pages`)
-catch err
-    # branch probably doesn't exist
-    run(`git checkout -b gh-pages`)
-end
+run(`git pull`)
+# we expect gh-pages to already be set up
+run(`git checkout gh-pages`)
 for file in readdir(gitroot; join = true)
     endswith(file, ".git") && continue
     rm(file; force = true, recursive = true)
