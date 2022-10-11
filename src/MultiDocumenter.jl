@@ -1,6 +1,7 @@
 module MultiDocumenter
 
 import Gumbo, AbstractTrees
+using HypertextLiteral
 
 """
     SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch)
@@ -35,6 +36,16 @@ struct DropdownNav
     children::Vector{MultiDocRef}
 end
 
+struct Column
+    name
+    children::Vector{MultiDocRef}
+end
+
+struct MegaDropdownNav
+    name
+    columns::Vector{Column}
+end
+
 struct BrandImage
     path::String
     imagepath::String
@@ -58,6 +69,7 @@ function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
     end
 end
 
+include("renderers.jl")
 include("search/flexsearch.jl")
 include("search/stork.jl")
 
@@ -137,6 +149,12 @@ function flatten_multidocrefs(docs::Vector)
     for doc in docs
         if doc isa MultiDocRef
             push!(out, doc)
+        elseif doc isa MegaDropdownNav
+            for col in doc.columns
+                for doc in col.children
+                    push!(out, doc)
+                end
+            end
         else
             for doc in doc.children
                 push!(out, doc)
@@ -160,7 +178,7 @@ function make_output_structure(docs::Vector{MultiDocRef}, prettyurls)
 
     for doc in docs
         outpath = joinpath(dir, doc.path)
-        cp(doc.upstream, outpath)
+        cp(doc.upstream, outpath; force = true)
 
         gitpath = joinpath(outpath, ".git")
         if isdir(gitpath)
@@ -181,32 +199,6 @@ function make_output_structure(docs::Vector{MultiDocRef}, prettyurls)
     return dir
 end
 
-function insert_multidocref_html!(navitems, doc, dir, thispagepath, prettyurls)
-    path = joinpath(dir, doc.path)
-    if !isfile(joinpath(path, "index.html"))
-        stable = joinpath(path, "stable")
-        dev = joinpath(path, "dev")
-        if isfile(joinpath(stable, "index.html"))
-            path = stable
-        elseif isfile(joinpath(dev, "index.html"))
-            path = dev
-        end
-    end
-    rp = relpath(path, thispagepath)
-    a = Gumbo.HTMLElement{:a}(
-        [],
-        navitems,
-        Dict(
-            "href" => string(rp, prettyurls ? "/" : "/index.html"),
-            "class" =>
-                startswith(thispagepath, joinpath(dir, doc.path, "")) ? # need to force a trailing pathsep here
-                "nav-link active nav-item" : "nav-link nav-item",
-        ),
-    )
-    push!(a.children, Gumbo.HTMLText(a, doc.name))
-    push!(navitems.children, a)
-end
-
 function make_global_nav(
     dir,
     docs::Vector,
@@ -215,67 +207,18 @@ function make_global_nav(
     search_engine,
     prettyurls,
 )
-    nav = Gumbo.HTMLElement{:nav}([], Gumbo.NullNode(), Dict("id" => "multi-page-nav"))
+    nav = @htl """
+    <nav id="multi-page-nav">
+        $(render(brand_image, dir, thispagepath))
+        <div id="nav-items" class="hidden-on-mobile">
+            $([render(doc, dir, thispagepath, prettyurls) for doc in docs])
+            $(search_engine.engine.render())
+        </div>
+        <a id="multidoc-toggler"></a>
+    </nav>
+    """
 
-    if brand_image !== nothing
-        a = Gumbo.HTMLElement{:a}(
-            [],
-            nav,
-            Dict(
-                "class" => "brand",
-                "href" => relpath(joinpath(dir, brand_image.path), thispagepath),
-            ),
-        )
-        img = Gumbo.HTMLElement{:img}(
-            [],
-            a,
-            Dict(
-                "src" => relpath(joinpath(dir, brand_image.imagepath), thispagepath),
-                "alt" => "Home",
-            ),
-        )
-        push!(a.children, img)
-        push!(nav.children, a)
-    end
-
-    navitems = Gumbo.HTMLElement{:div}(
-        [],
-        nav,
-        Dict("id" => "nav-items", "class" => "hidden-on-mobile"),
-    )
-    push!(nav.children, navitems)
-
-    for doc in docs
-        if doc isa MultiDocRef
-            insert_multidocref_html!(navitems, doc, dir, thispagepath, prettyurls)
-        else # doc isa DropdownNav
-            div = Gumbo.HTMLElement{:div}(
-                [],
-                navitems,
-                Dict("class" => "nav-dropdown"),
-            )
-            span = Gumbo.HTMLElement{:span}([], div, Dict("class" => "nav-item dropdown-label"))
-            push!(div.children, span)
-            push!(span.children, Gumbo.HTMLText(div, doc.name))
-            ul = Gumbo.HTMLElement{:ul}([], div, Dict("class" => "nav-dropdown-container"))
-            push!(div.children, ul)
-            push!(navitems.children, div)
-
-            for doc in doc.children
-                li = Gumbo.HTMLElement{:li}([], ul, Dict())
-                insert_multidocref_html!(li, doc, dir, thispagepath, prettyurls)
-                push!(ul.children, li)
-            end
-        end
-    end
-    if search_engine != false
-        search_engine.engine.inject_html!(navitems)
-    end
-
-    toggler = Gumbo.HTMLElement{:a}([], nav, Dict("id" => "multidoc-toggler"))
-    push!(nav.children, toggler)
-
-    return nav
+    return htl_to_gumbo(nav)
 end
 
 function make_global_stylesheet(custom_stylesheets, path)

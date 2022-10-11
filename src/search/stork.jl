@@ -1,6 +1,7 @@
 module Stork
 import Pkg.TOML
 import Gumbo, AbstractTrees
+using HypertextLiteral
 import ..walk_outputs
 
 function has_stork()
@@ -69,29 +70,13 @@ function inject_styles!(custom_styles)
     pushfirst!(custom_styles, joinpath("assets", "default", "stork.css"))
 end
 
-function inject_html!(parent)
-    div = Gumbo.HTMLElement{:div}(
-        [],
-        parent,
-        Dict("class" => "search stork-wrapper nav-item"),
-    )
-    push!(parent.children, div)
-    input = Gumbo.HTMLElement{:input}(
-        [],
-        div,
-        Dict(
-            "id" => "search-input",
-            "class" => "stork-input",
-            "data-stork" => "multidocumenter",
-            "placeholder" => "Search...",
-        ),
-    )
-    push!(div.children, input)
-    suggestions = Gumbo.HTMLElement{:div}(
-        [],
-        div,
-        Dict("class" => "stork-output", "data-stork" => "multidocumenter-output"),
-    )
-    push!(div.children, suggestions)
+function render()
+    return @htl """
+    <div class="search nav-item stork-wrapper">
+        <input id="search-input" class="stork-input" data-stork="multidocumenter" placeholder="Search...">
+        <div data-stork="multidocumenter-output" class="stork-output"></div>
+        <div class="search-keybinding"></div>
+    </div>
+    """
 end
 end

@@ -1,5 +1,6 @@
 module FlexSearch
 import Gumbo, JSON, AbstractTrees, NodeJS
+using HypertextLiteral
 import ..walk_outputs
 
 const ID = Ref(0)
@@ -101,28 +102,15 @@ function inject_styles!(custom_styles)
     pushfirst!(custom_styles, joinpath("assets", "default", "flexsearch.css"))
 end
 
-function inject_html!(parent)
-    div = Gumbo.HTMLElement{:div}([], parent, Dict("class" => "search nav-item"))
-    push!(parent.children, div)
-    input = Gumbo.HTMLElement{:input}(
-        [],
-        div,
-        Dict("id" => "search-input", "placeholder" => "Search..."),
-    )
-    push!(div.children, input)
-    suggestions = Gumbo.HTMLElement{:ul}(
-        [],
-        div,
-        Dict("id" => "search-result-container", "class" => "suggestions hidden"),
-    )
-    push!(div.children, suggestions)
-    keybinding = Gumbo.HTMLElement{:div}(
-        [],
-        div,
-        Dict("class" => "search-keybinding"),
-    )
-    push!(keybinding.children, Gumbo.HTMLText(keybinding, "/"))
-    push!(div.children, keybinding)
+function render()
+    return @htl """
+    <div class="search nav-item">
+        <input id="search-input" placeholder="Search...">
+        <ul id="search-result-container" class="suggestions hidden">
+        </ul>
+        <div class="search-keybinding"></div>
+    </div>
+    """
 end
 
 function to_json_index(index::SearchIndex, file)
