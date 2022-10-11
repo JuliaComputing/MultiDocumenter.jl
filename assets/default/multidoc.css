@@ -66,7 +66,7 @@ html {
     text-transform: uppercase;
 }
 
-#multi-page-nav .nav-dropdown .dropdown-label::after {
+#multi-page-nav .dropdown-label::after {
     content: "";
     margin-left: 5px;
 
@@ -99,8 +99,30 @@ html {
     background-color: #282f2f;
 }
 
-#multi-page-nav .nav-dropdown.nav-expanded .nav-dropdown-container {
+#multi-page-nav .nav-expanded .nav-dropdown-container {
     display: block;
+}
+
+#multi-page-nav .nav-mega-dropdown-container {
+    width: 100vw;
+    left: 0;
+    padding: 1em 2em;
+    border-radius: 0;
+    border: none;
+    flex-wrap: wrap;
+}
+
+#multi-page-nav .nav-mega-dropdown-container .nav-mega-column {
+    margin: 0 2em;
+}
+
+#multi-page-nav .nav-mega-dropdown-container .column-header {
+    color: #fff;
+    text-transform: uppercase;
+}
+
+#multi-page-nav .nav-expanded .nav-mega-dropdown-container {
+    display: flex;
 }
 
 #multi-page-nav .nav-dropdown-container a.nav-link {
@@ -128,8 +150,6 @@ html {
     color: #fff;
     font-weight: bold;
 }
-
-/* Search */
 
 /* Documenter css tweaks */
 
@@ -199,6 +219,15 @@ html {
     #multi-page-nav .nav-dropdown-container {
         position: relative;
         margin-bottom: 1em;
+    }
+
+    #multi-page-nav .nav-mega-dropdown-container {
+        width: unset;
+        padding: 1em;
+    }
+
+    #multi-page-nav .nav-mega-dropdown-container .nav-mega-column {
+        margin: 0 1em;
     }
 
     #documenter .docs-main header.docs-navbar.headroom--unpinned.headroom--not-top.headroom--not-bottom {

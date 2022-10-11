@@ -15,10 +15,18 @@ require(["jquery"], function ($) {
           .getElementById("nav-items")
           .classList.toggle("hidden-on-mobile");
       });
-      Array.prototype.map.call(document.getElementsByClassName("dropdown-label"), function (el) {
-      el.addEventListener("click", function () {
-        el.parentElement.classList.toggle("nav-expanded")
+      document.body.addEventListener("click", function (ev) {
+        console.log(ev)
+        if (!ev.target.matches(".nav-dropdown-container")) {
+          console.log("closing")
+          Array.prototype.forEach.call(document.getElementsByClassName("dropdown-label"), function (el) {
+            el.parentElement.classList.remove("nav-expanded")
+          });
+        }
+        if (ev.target.matches(".dropdown-label")) {
+          console.log("opening")
+          ev.target.parentElement.classList.add("nav-expanded")
+        }
       })
-    })
   });
 });
