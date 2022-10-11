@@ -20,7 +20,7 @@ using Test
             ),
         ]),
         MultiDocumenter.MegaDropdownNav("Mega Debugger", [
-            MultiDocumenter.Column("Colum 1", [
+            MultiDocumenter.Column("Column 1", [
                 MultiDocumenter.MultiDocRef(
                     upstream = joinpath(clonedir, "Infiltrator"),
                     path = "inf",
@@ -34,7 +34,7 @@ using Test
                     giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
                 ),
             ]),
-            MultiDocumenter.Column("Colum 2", [
+            MultiDocumenter.Column("Column 2", [
                 MultiDocumenter.MultiDocRef(
                     upstream = joinpath(clonedir, "Infiltrator"),
                     path = "inf",
