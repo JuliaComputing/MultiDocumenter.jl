@@ -64,6 +64,8 @@ html {
     cursor: pointer;
     color: #ccc;
     text-transform: uppercase;
+    border: none;
+    background: none;
 }
 
 #multi-page-nav .dropdown-label::after {
@@ -110,6 +112,7 @@ html {
     border-radius: 0;
     border: none;
     flex-wrap: wrap;
+    margin-top: 0;
 }
 
 #multi-page-nav .nav-mega-dropdown-container .nav-mega-column {

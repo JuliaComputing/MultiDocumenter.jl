@@ -32,7 +32,7 @@ end
 function render(doc::DropdownNav, dir, thispagepath, prettyurls)
     return @htl """
     <div class="nav-dropown">
-        <span class="nav-item dropdown-label">$(doc.name)</span>
+        <button class="nav-item dropdown-label">$(doc.name)</button>
         <ul class="nav-dropdown-container">
             $([render(doc, dir, thispagepath, prettyurls) for doc in doc.children])
         </ul>
@@ -43,7 +43,7 @@ end
 function render(doc::MegaDropdownNav, dir, thispagepath, prettyurls)
     return @htl """
     <div class="nav-dropown">
-        <span class="nav-item dropdown-label">$(doc.name)</span>
+        <button class="nav-item dropdown-label">$(doc.name)</button>
         <div class="nav-dropdown-container nav-mega-dropdown-container">
             $([render(doc, dir, thispagepath, prettyurls) for doc in doc.columns])
         </div>
