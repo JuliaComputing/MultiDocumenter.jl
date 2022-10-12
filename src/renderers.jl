@@ -3,7 +3,7 @@ render(::Nothing, args...) = nothing
 function render(brand_image::BrandImage, dir, thispagepath)
     return @htl """
     <a class="brand" href="$(brand_image.path)">
-        <img src="$(relpath(joinpath(dir, brand_image.imagepath), thispagepath))" alt="home">
+        <img src="$(brand_image.imagepath)" alt="home">
     </a>"""
 end
 
