@@ -8,16 +8,9 @@
             index: [
                 {
                     field: 'content',
-                    tokenize: 'forward',
-                    minlength: 3,
-                    resolution: 9
                 }
             ]
         },
-        encoder: 'simple',
-        fastupdate: false,
-        optimize: true,
-        context: true,
     });
 
     let importDone = null
