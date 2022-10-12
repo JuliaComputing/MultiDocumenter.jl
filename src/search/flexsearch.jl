@@ -143,10 +143,11 @@ function build_search_index(root, docs, config)
     ID[] = 0
     idx = generate_index(root, docs, config)
     to_json_index(idx, joinpath(root, "index.json"))
-    println("Writing flexsearch index:")
+    file = config.lowfi ? "gensearch-lowfi.js" : "gensearch.js"
+    println("Writing $(config.lowfi ? "lowfi" : "") flexsearch index:")
     cd(root) do
         run(
-            `$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", "gensearch.js"))`,
+            `$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`,
         )
     end
     return nothing

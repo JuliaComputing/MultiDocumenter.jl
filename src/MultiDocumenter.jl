@@ -4,16 +4,18 @@ import Gumbo, AbstractTrees
 using HypertextLiteral
 
 """
-    SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch)
+    SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch, lowfi = false)
 
 `index_versions` is a vector of relative paths used for generating the search index. Only
 the first matching path is considered.
 `engine` may be `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`, or a module that conforms
 to the expected API (which is currently undocumented).
+`lowfi = true` will try to minimize search index size. Only relevant for flexsearch.
 """
 Base.@kwdef mutable struct SearchConfig
     index_versions = ["stable", "dev"]
     engine = FlexSearch
+    lowfi = false
 end
 
 struct MultiDocRef
@@ -280,7 +282,7 @@ function inject_styles_and_global_navigation(
     end
     pushfirst!(custom_stylesheets, joinpath("assets", "default", "multidoc.css"))
 
-    for (root, _, files) in walkdir(dir)
+    @sync for (root, _, files) in walkdir(dir)
         for file in files
             path = joinpath(root, file)
             if file == "documenter.js"
@@ -294,11 +296,6 @@ function inject_styles_and_global_navigation(
 
             islink(path) && continue
             isfile(path) || continue
-
-            stylesheets = make_global_stylesheet(custom_stylesheets, relpath(dir, root))
-            scripts = make_global_scripts(custom_scripts, relpath(dir, root))
-
-
             page = read(path, String)
             if startswith(
                 page,
@@ -306,48 +303,54 @@ function inject_styles_and_global_navigation(
             )
                 continue
             end
-            doc = Gumbo.parsehtml(page)
-            injected = 0
 
-            for el in AbstractTrees.PreOrderDFS(doc.root)
-                injected >= 2 && break
+            Threads.@spawn begin
+                stylesheets = make_global_stylesheet(custom_stylesheets, relpath(dir, root))
+                scripts = make_global_scripts(custom_scripts, relpath(dir, root))
 
-                if el isa Gumbo.HTMLElement
-                    if Gumbo.tag(el) == :head
-                        for stylesheet in stylesheets
-                            stylesheet.parent = el
-                            push!(el.children, stylesheet)
-                        end
-                        for script in scripts
-                            script.parent = el
-                            pushfirst!(el.children, script)
-                        end
-                        injected += 1
-                    elseif Gumbo.tag(el) == :body && !isempty(el.children)
-                        documenter_div = first(el.children)
-                        if documenter_div isa Gumbo.HTMLElement &&
-                           Gumbo.getattr(documenter_div, "id", "") == "documenter"
-                            @debug "Could not detect Documenter page layout in $path. This may be due to an old version of Documenter."
-                        end
-                        # inject global navigation as first element in body
+                doc = Gumbo.parsehtml(page)
+                injected = 0
 
-                        global_nav = make_global_nav(
-                            dir,
-                            docs,
-                            root,
-                            brand_image,
-                            search_engine,
-                            prettyurls,
-                        )
-                        global_nav.parent = el
-                        pushfirst!(el.children, global_nav)
-                        injected += 1
+                for el in AbstractTrees.PreOrderDFS(doc.root)
+                    injected >= 2 && break
+
+                    if el isa Gumbo.HTMLElement
+                        if Gumbo.tag(el) == :head
+                            for stylesheet in stylesheets
+                                stylesheet.parent = el
+                                push!(el.children, stylesheet)
+                            end
+                            for script in scripts
+                                script.parent = el
+                                pushfirst!(el.children, script)
+                            end
+                            injected += 1
+                        elseif Gumbo.tag(el) == :body && !isempty(el.children)
+                            documenter_div = first(el.children)
+                            if documenter_div isa Gumbo.HTMLElement &&
+                            Gumbo.getattr(documenter_div, "id", "") == "documenter"
+                                @debug "Could not detect Documenter page layout in $path. This may be due to an old version of Documenter."
+                            end
+                            # inject global navigation as first element in body
+
+                            global_nav = make_global_nav(
+                                dir,
+                                docs,
+                                root,
+                                brand_image,
+                                search_engine,
+                                prettyurls,
+                            )
+                            global_nav.parent = el
+                            pushfirst!(el.children, global_nav)
+                            injected += 1
+                        end
                     end
                 end
-            end
 
-            open(path, "w") do io
-                print(io, doc)
+                open(path, "w") do io
+                    print(io, doc)
+                end
             end
         end
     end
