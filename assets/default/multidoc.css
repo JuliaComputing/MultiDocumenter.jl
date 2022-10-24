@@ -8,7 +8,7 @@ html {
     height: var(--navbar-height);
     z-index: 10;
     padding: 0 1rem;
-    position: fixed;
+    position: sticky;
     display: flex;
     top: 0;
     background-color: #282f2f;
@@ -25,15 +25,19 @@ html {
     display: none;
     margin-left: auto;
     font-size: 24px;
-    color: white;
-    margin-left: auto;
-    line-height: var(--navbar-height);
+    height: var(--navbar-height);
     padding: 0;
+    fill: white;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding-inline: none;
 }
 
-#multi-page-nav #multidoc-toggler:before {
-    content: "\f0c9";
-    font-family: "Font Awesome 5 Free";
+#multi-page-nav #multidoc-toggler > svg {
+    line-height: unset;
+    width: 24px;
+    height: 24px;
 }
 
 #multi-page-nav>* {
@@ -67,6 +71,7 @@ html {
     border: none;
     text-align: left;
     background: none;
+    padding: 0 12px;
 }
 
 #multi-page-nav .nav-expanded .dropdown-label {
@@ -132,6 +137,9 @@ html {
 
 #multi-page-nav .nav-mega-dropdown-container .column-header {
     color: #fff;
+    font-size: 16px;
+    padding: 5px;
+    margin: 0;
     text-transform: uppercase;
 }
 
@@ -165,12 +173,11 @@ html {
     font-weight: bold;
 }
 
-/* Documenter css tweaks */
-
-#documenter .docs-main header.docs-navbar {
-    top: var(--navbar-height);
+#multi-page-nav .column-content {
+    padding: 0;
 }
 
+/* Documenter css tweaks */
 .docs-sidebar  {
     padding-top: calc(var(--navbar-height) + 1rem) !important;
 }
@@ -179,13 +186,6 @@ html {
     top: 0;
 }
 
-@media screen and (min-width: 1056px) {
-    #documenter {
-        margin-top: calc(var(--navbar-height)) !important;
-    }
-}
-
-/* headroom.js for the multi-page navbar */
 @media screen and (max-width: 1055px) {
     #multi-page-nav {
         position: sticky;

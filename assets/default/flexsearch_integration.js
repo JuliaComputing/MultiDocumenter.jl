@@ -13,30 +13,39 @@
         },
     });
 
-    let importDone = null
+    let successfullyLoadedIndex = null
 
     function loadIndex(flexsearchIdx) {
         const input = document.getElementById('search-input')
         input.setAttribute('placeholder', 'Loading...')
-        importDone = false
+        successfullyLoadedIndex = false
         const keys = ['content.cfg', 'content.ctx', 'content.map', 'reg', 'store']
-        for (const key of keys) {
-            fetch('/search-data/' + key + '.json').then(r => {
-                if (r.ok) {
-                    r.json().then(idx => {
-                        flexsearchIdx.import(key, idx)
-                        if (key === keys[keys.length - 1]) {
-                            setTimeout(() => {
-                                importDone = true
-                                input.setAttribute('placeholder', 'Search...')
-                            }, 100)
-                        }
-                    })
-                } else {
-                    input.setAttribute('placeholder', 'Error loading search index.')
-                }
+        const promises = keys.map(key => {
+            return new Promise((resolve, reject) => {
+                fetch('/search-data/' + key + '.json').then(r => {
+                    if (r && r.ok) {
+                        r.json().then(idx => {
+                            flexsearchIdx.import(key, idx)
+                            resolve()
+                        }).catch(() => {
+                            reject()
+                        })
+                    } else {
+                        reject()
+                    }
+                }).catch(() => {
+                    reject()
+                })
             })
-        }
+        })
+
+        Promise.all(promises).then(() => {
+            input.setAttribute('placeholder', 'Search...')
+            successfullyLoadedIndex = true
+        }).catch(() => {
+            input.setAttribute('placeholder', 'Error loading search data...')
+            successfullyLoadedIndex = false
+        })
     }
 
     function registerSearchListener() {
@@ -46,9 +55,9 @@
         let lastQuery = ''
 
         function runSearch() {
-            if (importDone === null) {
+            if (successfullyLoadedIndex === null) {
                 loadIndex(flexsearchIdx)
-            } else if (importDone === false) {
+            } else if (successfullyLoadedIndex === false) {
                 return
             }
             const query = input.value

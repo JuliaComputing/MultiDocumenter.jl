@@ -33,6 +33,12 @@ using Test
                     name = "JuliaInterpreter",
                     giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
                 ),
+                MultiDocumenter.MultiDocRef(
+                    upstream = joinpath(clonedir, "Lux"),
+                    path = "lux",
+                    name = "Lux",
+                    giturl = "https://github.com/avik-pal/Lux.jl",
+                ),
             ]),
             MultiDocumenter.Column("Column 2", [
                 MultiDocumenter.MultiDocRef(
