@@ -19,7 +19,7 @@
     border-radius: 3.2px;
     color: #999;
     background-color: unset;
-    height: 1.8rem;
+    height: 28px;
     font-family: Glober;
     width: 20em;
     font-size: 14px;
@@ -92,6 +92,11 @@
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: black;
+}
+
+.theme--documenter-dark #multi-page-nav .suggestion a {
+    color: white;
 }
 
 #multi-page-nav .suggestion a:hover,
