@@ -75,7 +75,7 @@ function add_to_index!(index, ref, file)
                 title = Gumbo.text(el)
                 doc.title = first(split(title, " · "))
             end
-            if Gumbo.tag(el) == :article && Gumbo.getattr(el, "class", "") == "content"
+            if Gumbo.tag(el) == :article
                 add_fragment(doc, el)
                 break
             end

@@ -94,8 +94,8 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 - `assets_dir` is copied into `outdir/assets`
 - `brand_image` is a `BrandImage(path, imgpath)`, which is rendered as the leftmost
   item in the global navigation
-- `custom_stylesheets` is a `Vector{String}` of stylesheets injected into each page.
-- `custom_scripts` is a `Vector{String}` of scripts injected into each page.
+- `custom_stylesheets` is a `Vector{String}` of relative stylesheet URLs injected into each page.
+- `custom_scripts` is a `Vector{String}` of relative script URLs injected into each page.
 - `search_engine` inserts a global search bar if not `false`. See [`SearchConfig`](@ref) for more details.
 - `prettyurls` removes all `index.html` suffixes from links in the global navigation.
 """
@@ -216,7 +216,11 @@ function make_global_nav(
             $([render(doc, dir, thispagepath, prettyurls) for doc in docs])
             $(search_engine.engine.render())
         </div>
-        <a id="multidoc-toggler"></a>
+        <button id="multidoc-toggler">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"></path>
+            </svg>
+        </button>
     </nav>
     """
 
@@ -233,7 +237,7 @@ function make_global_stylesheet(custom_stylesheets, path)
             Dict(
                 "rel" => "stylesheet",
                 "type" => "text/css",
-                "href" => joinpath(path, stylesheet),
+                "href" => string(path, "/", stylesheet),
             ),
         )
         push!(out, style)
@@ -250,7 +254,7 @@ function make_global_scripts(custom_scripts, path)
             [],
             Gumbo.NullNode(),
             Dict(
-                "src" => joinpath(path, script),
+                "src" => string(path, "/", script),
                 "type" => "text/javascript",
                 "charset" => "utf-8",
             ),
@@ -281,16 +285,11 @@ function inject_styles_and_global_navigation(
         search_engine.engine.inject_styles!(custom_stylesheets)
     end
     pushfirst!(custom_stylesheets, joinpath("assets", "default", "multidoc.css"))
+    pushfirst!(custom_scripts, joinpath("assets", "default", "multidoc_injector.js"))
 
     @sync for (root, _, files) in walkdir(dir)
         for file in files
             path = joinpath(root, file)
-            if file == "documenter.js"
-                open(path, "a") do io
-                    println(io, js_injector())
-                end
-                continue
-            end
 
             endswith(file, ".html") || continue
 

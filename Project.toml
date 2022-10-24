@@ -13,7 +13,7 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 
 [compat]
 AbstractTrees = "0.4"
-Gumbo = "0.8"
+Gumbo = "0.8.2"
 HypertextLiteral = "0.9"
 JSON = "0.20,0.21"
 NodeJS = "1"

@@ -54,7 +54,7 @@ end
 function render(doc::Column, dir, thispagepath, prettyurls)
     return @htl """
     <div class="nav-mega-column">
-        <h5 class="column-header">$(doc.name)</h5>
+        <div class="column-header">$(doc.name)</div>
         <ul class="column-content">
             $([render(doc, dir, thispagepath, prettyurls) for doc in doc.children])
         </ul>
