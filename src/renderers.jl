@@ -1,9 +1,15 @@
 render(::Nothing, args...) = nothing
 
 function render(brand_image::BrandImage, dir, thispagepath)
+    href = startswith(brand_image.path, "https?://") ?
+        brand_image.path :
+        relpath(joinpath(dir, brand_image.path), thispagepath)
+    src = startswith(brand_image.imagepath, "https?://") ?
+        brand_image.imagepath :
+        relpath(joinpath(dir, brand_image.imagepath), thispagepath)
     return @htl """
-    <a class="brand" href="$(relpath(joinpath(dir, brand_image.path), thispagepath))">
-        <img src="$(relpath(joinpath(dir, brand_image.imagepath), thispagepath))" alt="home">
+    <a class="brand" href="$(href)">
+        <img src="$(src)" alt="home">
     </a>"""
 end
 

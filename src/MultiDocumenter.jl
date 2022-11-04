@@ -231,13 +231,16 @@ function make_global_stylesheet(custom_stylesheets, path)
     out = []
 
     for stylesheet in custom_stylesheets
+        stylesheet = startswith(stylesheet, r"https?://") ?
+            stylesheet :
+            replace(joinpath(path, stylesheet), raw"\\" => "/")
         style = Gumbo.HTMLElement{:link}(
             [],
             Gumbo.NullNode(),
             Dict(
                 "rel" => "stylesheet",
                 "type" => "text/css",
-                "href" => string(path, "/", stylesheet),
+                "href" => stylesheet,
             ),
         )
         push!(out, style)
@@ -250,11 +253,14 @@ function make_global_scripts(custom_scripts, path)
     out = []
 
     for script in custom_scripts
+        script = startswith(script, r"https?://") ?
+            script :
+            replace(joinpath(path, script), raw"\\" => "/")
         js = Gumbo.HTMLElement{:script}(
             [],
             Gumbo.NullNode(),
             Dict(
-                "src" => string(path, "/", script),
+                "src" => script,
                 "type" => "text/javascript",
                 "charset" => "utf-8",
             ),
