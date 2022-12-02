@@ -325,7 +325,7 @@ function inject_styles_and_global_navigation(
                                 stylesheet.parent = el
                                 push!(el.children, stylesheet)
                             end
-                            for script in scripts
+                            for script in reverse!(scripts)
                                 script.parent = el
                                 pushfirst!(el.children, script)
                             end
