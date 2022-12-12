@@ -1,10 +1,10 @@
 render(::Nothing, args...) = nothing
 
 function render(brand_image::BrandImage, dir, thispagepath)
-    href = startswith(brand_image.path, "https?://") ?
+    href = startswith(brand_image.path, r"https?://") ?
         brand_image.path :
         relpath(joinpath(dir, brand_image.path), thispagepath)
-    src = startswith(brand_image.imagepath, "https?://") ?
+    src = startswith(brand_image.imagepath, r"https?://") ?
         brand_image.imagepath :
         relpath(joinpath(dir, brand_image.imagepath), thispagepath)
     return @htl """
