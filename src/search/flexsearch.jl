@@ -146,9 +146,7 @@ function build_search_index(root, docs, config)
     file = config.lowfi ? "gensearch-lowfi.js" : "gensearch.js"
     println("Writing $(config.lowfi ? "lowfi" : "") flexsearch index:")
     cd(root) do
-        run(
-            `$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`,
-        )
+        run(`$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`)
     end
     return nothing
 end

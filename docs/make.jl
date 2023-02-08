@@ -3,22 +3,9 @@ using MultiDocumenter
 clonedir = mktempdir()
 
 docs = [
-    MultiDocumenter.DropdownNav("Debugging", [
-        MultiDocumenter.MultiDocRef(
-            upstream = joinpath(clonedir, "Infiltrator"),
-            path = "inf",
-            name = "Infiltrator",
-            giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
-        ),
-        MultiDocumenter.MultiDocRef(
-            upstream = joinpath(clonedir, "JuliaInterpreter"),
-            path = "debug",
-            name = "JuliaInterpreter",
-            giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
-        ),
-    ]),
-    MultiDocumenter.MegaDropdownNav("Mega Debugger", [
-        MultiDocumenter.Column("Column 1", [
+    MultiDocumenter.DropdownNav(
+        "Debugging",
+        [
             MultiDocumenter.MultiDocRef(
                 upstream = joinpath(clonedir, "Infiltrator"),
                 path = "inf",
@@ -31,22 +18,47 @@ docs = [
                 name = "JuliaInterpreter",
                 giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
             ),
-        ]),
-        MultiDocumenter.Column("Column 2", [
-            MultiDocumenter.MultiDocRef(
-                upstream = joinpath(clonedir, "Infiltrator"),
-                path = "inf",
-                name = "Infiltrator",
-                giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
+        ],
+    ),
+    MultiDocumenter.MegaDropdownNav(
+        "Mega Debugger",
+        [
+            MultiDocumenter.Column(
+                "Column 1",
+                [
+                    MultiDocumenter.MultiDocRef(
+                        upstream = joinpath(clonedir, "Infiltrator"),
+                        path = "inf",
+                        name = "Infiltrator",
+                        giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
+                    ),
+                    MultiDocumenter.MultiDocRef(
+                        upstream = joinpath(clonedir, "JuliaInterpreter"),
+                        path = "debug",
+                        name = "JuliaInterpreter",
+                        giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
+                    ),
+                ],
             ),
-            MultiDocumenter.MultiDocRef(
-                upstream = joinpath(clonedir, "JuliaInterpreter"),
-                path = "debug",
-                name = "JuliaInterpreter",
-                giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
+            MultiDocumenter.Column(
+                "Column 2",
+                [
+                    MultiDocumenter.MultiDocRef(
+                        upstream = joinpath(clonedir, "Infiltrator"),
+                        path = "inf",
+                        name = "Infiltrator",
+                        giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
+                    ),
+                    MultiDocumenter.MultiDocRef(
+                        upstream = joinpath(clonedir, "JuliaInterpreter"),
+                        path = "debug",
+                        name = "JuliaInterpreter",
+                        giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
+                    ),
+                ],
             ),
-        ]),
-    ]),
+        ],
+    ),
     MultiDocumenter.MultiDocRef(
         upstream = joinpath(clonedir, "DataSets"),
         path = "data",
@@ -64,8 +76,8 @@ MultiDocumenter.make(
     docs;
     search_engine = MultiDocumenter.SearchConfig(
         index_versions = ["stable"],
-        engine = MultiDocumenter.FlexSearch
-    )
+        engine = MultiDocumenter.FlexSearch,
+    ),
 )
 
 gitroot = normpath(joinpath(@__DIR__, ".."))
