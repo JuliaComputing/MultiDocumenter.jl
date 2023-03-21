@@ -186,6 +186,8 @@ function make_output_structure(docs::Vector{MultiDocRef}, prettyurls)
 
     for doc in docs
         outpath = joinpath(dir, doc.path)
+
+        mkpath(dirname(outpath))
         cp(doc.upstream, outpath; force = true)
 
         gitpath = joinpath(outpath, ".git")
