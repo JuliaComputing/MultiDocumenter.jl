@@ -65,7 +65,8 @@ MultiDocumenter.make(
     search_engine = MultiDocumenter.SearchConfig(
         index_versions = ["stable"],
         engine = MultiDocumenter.FlexSearch
-    )
+    ),
+    rootpath = "/MultiDocumenter.jl/",
 )
 
 gitroot = normpath(joinpath(@__DIR__, ".."))

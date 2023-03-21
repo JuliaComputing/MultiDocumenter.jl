@@ -63,7 +63,8 @@ function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
                 for file in files
                     file == "index.html" || continue
 
-                    f(chop(r, head = length(root), tail = 0), joinpath(r, file))
+                    # +1 for path separator
+                    f(chop(r, head = length(root) + 1, tail = 0), joinpath(r, file))
                 end
             end
             break
@@ -86,7 +87,8 @@ const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine =
         custom_stylesheets = [],
         custom_scripts = [],
         search_engine = SearchConfig(),
-        prettyurls = true
+        prettyurls = true,
+        rootpath = "/"
     )
 
 Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`.
@@ -99,6 +101,7 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
   `Docs.HTML` objects are inserted as the content of inline scripts.
 - `search_engine` inserts a global search bar if not `false`. See [`SearchConfig`](@ref) for more details.
 - `prettyurls` removes all `index.html` suffixes from links in the global navigation.
+-`rootpath` is the path your site ends up being deployed at, e.g. `/foo/` if it's hosted at `https://bar.com/foo`
 """
 function make(
     outdir,
@@ -109,6 +112,7 @@ function make(
     custom_scripts = [],
     search_engine = DEFAULT_ENGINE,
     prettyurls = true,
+    rootpath = "/",
 )
     maybe_clone(flatten_multidocrefs(docs))
 
@@ -135,10 +139,11 @@ function make(
         custom_scripts,
         search_engine,
         prettyurls,
+        rootpath,
     )
 
     if search_engine != false
-        search_engine.engine.build_search_index(dir, flatten_multidocrefs(docs), search_engine)
+        search_engine.engine.build_search_index(dir, flatten_multidocrefs(docs), search_engine, rootpath)
     end
 
     cp(dir, outdir; force = true)
@@ -300,10 +305,11 @@ function inject_styles_and_global_navigation(
     custom_scripts,
     search_engine,
     prettyurls,
+    rootpath,
 )
 
     if search_engine != false
-        search_engine.engine.inject_script!(custom_scripts)
+        search_engine.engine.inject_script!(custom_scripts, rootpath)
         search_engine.engine.inject_styles!(custom_stylesheets)
     end
     pushfirst!(custom_stylesheets, joinpath("assets", "default", "multidoc.css"))
