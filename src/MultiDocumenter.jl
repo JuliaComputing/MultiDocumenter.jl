@@ -95,7 +95,8 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 - `brand_image` is a `BrandImage(path, imgpath)`, which is rendered as the leftmost
   item in the global navigation
 - `custom_stylesheets` is a `Vector{String}` of relative stylesheet URLs injected into each page.
-- `custom_scripts` is a `Vector{String}` of relative script URLs injected into each page.
+- `custom_scripts` is a `Vector{Union{String, Docs.HTML}}`. Strings can be relative or absolute URLs, while
+  `Docs.HTML` objects are inserted as the content of inline scripts.
 - `search_engine` inserts a global search bar if not `false`. See [`SearchConfig`](@ref) for more details.
 - `prettyurls` removes all `index.html` suffixes from links in the global navigation.
 """
@@ -253,19 +254,34 @@ function make_global_scripts(custom_scripts, path)
     out = []
 
     for script in custom_scripts
-        script = startswith(script, r"https?://") ?
-            script :
-            replace(joinpath(path, script), raw"\\" => "/")
-        js = Gumbo.HTMLElement{:script}(
-            [],
-            Gumbo.NullNode(),
-            Dict(
-                "src" => script,
-                "type" => "text/javascript",
-                "charset" => "utf-8",
-            ),
-        )
-        push!(out, js)
+        if script isa Docs.HTML
+            js = Gumbo.HTMLElement{:script}(
+                [],
+                Gumbo.NullNode(),
+                Dict(
+                    "type" => "text/javascript",
+                    "charset" => "utf-8",
+                ),
+            )
+            push!(js, Gumbo.HTMLText(js, script.content))
+            push!(out, js)
+        elseif script isa AbstractString
+            script = startswith(script, r"https?://") ?
+                script :
+                replace(joinpath(path, script), raw"\\" => "/")
+            js = Gumbo.HTMLElement{:script}(
+                [],
+                Gumbo.NullNode(),
+                Dict(
+                    "src" => script,
+                    "type" => "text/javascript",
+                    "charset" => "utf-8",
+                ),
+            )
+            push!(out, js)
+        else
+            throw(ArgumentError("`custom_scripts` may only contain elements of type `AbstractString` or `Docs.HTML`."))
+        end
     end
 
     return out
