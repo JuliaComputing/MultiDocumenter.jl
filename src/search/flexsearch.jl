@@ -84,18 +84,20 @@ function add_to_index!(index, ref, file)
     push!(index.documents, doc)
 end
 
-function generate_index(root, docs, config)
+function generate_index(root, docs, config, rootpath)
     search_index = SearchIndex()
     walk_outputs(root, docs, config.index_versions) do path, file
-        add_to_index!(search_index, path, file)
+        ref = replace(joinpath(rootpath, path), raw"\\" => "/")
+        add_to_index!(search_index, ref, file)
     end
 
     return search_index
 end
 
-function inject_script!(custom_scripts)
+function inject_script!(custom_scripts, rootpath)
     pushfirst!(custom_scripts, joinpath("assets", "default", "flexsearch_integration.js"))
     pushfirst!(custom_scripts, joinpath("assets", "default", "flexsearch.bundle.js"))
+    pushfirst!(custom_scripts, Docs.HTML("window.MULTIDOCUMENTER_ROOT_PATH = '$(rootpath)'"))
 end
 
 function inject_styles!(custom_styles)
@@ -139,9 +141,9 @@ function to_json_index(index::SearchIndex, file)
     end
 end
 
-function build_search_index(root, docs, config)
+function build_search_index(root, docs, config, rootpath)
     ID[] = 0
-    idx = generate_index(root, docs, config)
+    idx = generate_index(root, docs, config, rootpath)
     to_json_index(idx, joinpath(root, "index.json"))
     file = config.lowfi ? "gensearch-lowfi.js" : "gensearch.js"
     println("Writing $(config.lowfi ? "lowfi" : "") flexsearch index:")

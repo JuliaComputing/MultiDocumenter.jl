@@ -14,7 +14,7 @@ function has_stork()
     return has_stork
 end
 
-function build_search_index(root, docs, config)
+function build_search_index(root, docs, config, _)
     config = make_stork_config(root, docs, config)
     config_path = joinpath(root, "stork.config.toml")
     index_path = joinpath(root, "stork.st")
@@ -61,7 +61,7 @@ function add_to_index!(files, ref, path)
     return
 end
 
-function inject_script!(custom_scripts)
+function inject_script!(custom_scripts, _)
     pushfirst!(custom_scripts, joinpath("assets", "default", "stork.js"))
     pushfirst!(custom_scripts, joinpath("assets", "default", "stork_integration.js"))
 end

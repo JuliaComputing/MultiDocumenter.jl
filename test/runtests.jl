@@ -67,6 +67,8 @@ using Test
 
     outpath = joinpath(@__DIR__, "out")
 
+    rootpath = "/MultiDocumenter.jl/"
+
     MultiDocumenter.make(
         outpath,
         docs;
@@ -78,7 +80,8 @@ using Test
             "foo/bar.js",
             "https://foo.com/bar.js",
             Docs.HTML("const foo = 'bar';")
-        ]
+        ],
+        rootpath = rootpath,
     )
 
     @testset "structure" begin
@@ -96,6 +99,7 @@ using Test
     @testset "custom scripts" begin
         index = read(joinpath(outpath, "inf", "stable", "index.html"), String)
 
+        @test occursin("""<script charset="utf-8" type="text/javascript">window.MULTIDOCUMENTER_ROOT_PATH = '$rootpath'</script>""", index)
         @test occursin("""<script charset="utf-8" src="../../foo/bar.js" type="text/javascript"></script>""", index)
         @test occursin("""<script charset="utf-8" src="https://foo.com/bar.js" type="text/javascript"></script>""", index)
         @test occursin("""<script charset="utf-8" type="text/javascript">const foo = 'bar';</script>""", index)
@@ -107,7 +111,8 @@ using Test
         @test !isempty(store_content)
         @test occursin("Infiltrator.jl", store_content)
         @test occursin("@infiltrate", store_content)
-        @test occursin("/inf/stable/", store_content)
+        @test occursin("$(rootpath)inf/stable/", store_content)
+        @test occursin("$(rootpath)inf/stable/", store_content)
         @test !occursin("/inf/dev/", store_content)
     end
 
