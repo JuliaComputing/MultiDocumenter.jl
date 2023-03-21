@@ -2,6 +2,7 @@ module MultiDocumenter
 
 import Gumbo, AbstractTrees
 using HypertextLiteral
+import Git: git
 
 """
     SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch, lowfi = false)
@@ -176,7 +177,9 @@ function maybe_clone(docs::Vector{MultiDocRef})
     for doc in docs
         if !isdir(doc.upstream)
             @info "Upstream at $(doc.upstream) does not exist. `git clone`ing `$(doc.giturl)#$(doc.branch)`"
-            run(`git clone --depth 1 $(doc.giturl) --branch $(doc.branch) --single-branch $(doc.upstream)`)
+            run(
+                `$(git()) clone --depth 1 $(doc.giturl) --branch $(doc.branch) --single-branch $(doc.upstream)`,
+            )
         end
     end
 end
