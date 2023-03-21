@@ -113,7 +113,7 @@ function render()
         <input id="search-input" placeholder="Search...">
         <ul id="search-result-container" class="suggestions hidden">
         </ul>
-        <div class="search-keybinding"></div>
+        <div class="search-keybinding">/</div>
     </div>
     """
 end
