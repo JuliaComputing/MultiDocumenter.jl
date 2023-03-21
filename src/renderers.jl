@@ -1,11 +1,11 @@
 render(::Nothing, args...) = nothing
 
 function render(brand_image::BrandImage, dir, thispagepath)
-    href = startswith(brand_image.path, r"https?://") ?
-        brand_image.path :
+    href =
+        startswith(brand_image.path, r"https?://") ? brand_image.path :
         relpath(joinpath(dir, brand_image.path), thispagepath)
-    src = startswith(brand_image.imagepath, r"https?://") ?
-        brand_image.imagepath :
+    src =
+        startswith(brand_image.imagepath, r"https?://") ? brand_image.imagepath :
         relpath(joinpath(dir, brand_image.imagepath), thispagepath)
     return @htl """
     <a class="brand" href="$(href)">
@@ -27,8 +27,9 @@ function render(doc::MultiDocRef, dir, thispagepath, prettyurls)
     rp = relpath(path, thispagepath)
     href = string(rp, prettyurls ? "/" : "/index.html")
     # need to force a trailing pathsep here
-    class = startswith(thispagepath, joinpath(dir, doc.path, "")) ?
-        "nav-link active nav-item" : "nav-link nav-item"
+    class =
+        startswith(thispagepath, joinpath(dir, doc.path, "")) ? "nav-link active nav-item" :
+        "nav-link nav-item"
 
     return @htl """
     <a href="$href" class="$class">$(doc.name)</a>

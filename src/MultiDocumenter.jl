@@ -40,12 +40,12 @@ struct DropdownNav
 end
 
 struct Column
-    name
+    name::Any
     children::Vector{MultiDocRef}
 end
 
 struct MegaDropdownNav
-    name
+    name::Any
     columns::Vector{Column}
 end
 
@@ -144,7 +144,12 @@ function make(
     )
 
     if search_engine != false
-        search_engine.engine.build_search_index(dir, flatten_multidocrefs(docs), search_engine, rootpath)
+        search_engine.engine.build_search_index(
+            dir,
+            flatten_multidocrefs(docs),
+            search_engine,
+            rootpath,
+        )
     end
 
     cp(dir, outdir; force = true)
@@ -242,17 +247,13 @@ function make_global_stylesheet(custom_stylesheets, path)
     out = []
 
     for stylesheet in custom_stylesheets
-        stylesheet = startswith(stylesheet, r"https?://") ?
-            stylesheet :
+        stylesheet =
+            startswith(stylesheet, r"https?://") ? stylesheet :
             replace(joinpath(path, stylesheet), raw"\\" => "/")
         style = Gumbo.HTMLElement{:link}(
             [],
             Gumbo.NullNode(),
-            Dict(
-                "rel" => "stylesheet",
-                "type" => "text/css",
-                "href" => stylesheet,
-            ),
+            Dict("rel" => "stylesheet", "type" => "text/css", "href" => stylesheet),
         )
         push!(out, style)
     end
@@ -268,29 +269,26 @@ function make_global_scripts(custom_scripts, path)
             js = Gumbo.HTMLElement{:script}(
                 [],
                 Gumbo.NullNode(),
-                Dict(
-                    "type" => "text/javascript",
-                    "charset" => "utf-8",
-                ),
+                Dict("type" => "text/javascript", "charset" => "utf-8"),
             )
             push!(js, Gumbo.HTMLText(js, script.content))
             push!(out, js)
         elseif script isa AbstractString
-            script = startswith(script, r"https?://") ?
-                script :
+            script =
+                startswith(script, r"https?://") ? script :
                 replace(joinpath(path, script), raw"\\" => "/")
             js = Gumbo.HTMLElement{:script}(
                 [],
                 Gumbo.NullNode(),
-                Dict(
-                    "src" => script,
-                    "type" => "text/javascript",
-                    "charset" => "utf-8",
-                ),
+                Dict("src" => script, "type" => "text/javascript", "charset" => "utf-8"),
             )
             push!(out, js)
         else
-            throw(ArgumentError("`custom_scripts` may only contain elements of type `AbstractString` or `Docs.HTML`."))
+            throw(
+                ArgumentError(
+                    "`custom_scripts` may only contain elements of type `AbstractString` or `Docs.HTML`.",
+                ),
+            )
         end
     end
 
@@ -360,7 +358,7 @@ function inject_styles_and_global_navigation(
                         elseif Gumbo.tag(el) == :body && !isempty(el.children)
                             documenter_div = first(el.children)
                             if documenter_div isa Gumbo.HTMLElement &&
-                            Gumbo.getattr(documenter_div, "id", "") == "documenter"
+                               Gumbo.getattr(documenter_div, "id", "") == "documenter"
                                 @debug "Could not detect Documenter page layout in $path. This may be due to an old version of Documenter."
                             end
                             # inject global navigation as first element in body

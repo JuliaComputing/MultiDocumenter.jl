@@ -97,7 +97,10 @@ end
 function inject_script!(custom_scripts, rootpath)
     pushfirst!(custom_scripts, joinpath("assets", "default", "flexsearch_integration.js"))
     pushfirst!(custom_scripts, joinpath("assets", "default", "flexsearch.bundle.js"))
-    pushfirst!(custom_scripts, Docs.HTML("window.MULTIDOCUMENTER_ROOT_PATH = '$(rootpath)'"))
+    pushfirst!(
+        custom_scripts,
+        Docs.HTML("window.MULTIDOCUMENTER_ROOT_PATH = '$(rootpath)'"),
+    )
 end
 
 function inject_styles!(custom_styles)
@@ -148,9 +151,7 @@ function build_search_index(root, docs, config, rootpath)
     file = config.lowfi ? "gensearch-lowfi.js" : "gensearch.js"
     println("Writing $(config.lowfi ? "lowfi" : "") flexsearch index:")
     cd(root) do
-        run(
-            `$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`,
-        )
+        run(`$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`)
     end
     return nothing
 end
