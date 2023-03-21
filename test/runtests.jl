@@ -5,22 +5,9 @@ using Test
     clonedir = mktempdir()
 
     docs = [
-        MultiDocumenter.DropdownNav("Debugging", [
-            MultiDocumenter.MultiDocRef(
-                upstream = joinpath(clonedir, "Infiltrator"),
-                path = "inf",
-                name = "Infiltrator",
-                giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
-            ),
-            MultiDocumenter.MultiDocRef(
-                upstream = joinpath(clonedir, "JuliaInterpreter"),
-                path = "debug",
-                name = "JuliaInterpreter",
-                giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
-            ),
-        ]),
-        MultiDocumenter.MegaDropdownNav("Mega Debugger", [
-            MultiDocumenter.Column("Column 1", [
+        MultiDocumenter.DropdownNav(
+            "Debugging",
+            [
                 MultiDocumenter.MultiDocRef(
                     upstream = joinpath(clonedir, "Infiltrator"),
                     path = "inf",
@@ -33,28 +20,53 @@ using Test
                     name = "JuliaInterpreter",
                     giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
                 ),
-                MultiDocumenter.MultiDocRef(
-                    upstream = joinpath(clonedir, "Lux"),
-                    path = "lux",
-                    name = "Lux",
-                    giturl = "https://github.com/avik-pal/Lux.jl",
+            ],
+        ),
+        MultiDocumenter.MegaDropdownNav(
+            "Mega Debugger",
+            [
+                MultiDocumenter.Column(
+                    "Column 1",
+                    [
+                        MultiDocumenter.MultiDocRef(
+                            upstream = joinpath(clonedir, "Infiltrator"),
+                            path = "inf",
+                            name = "Infiltrator",
+                            giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
+                        ),
+                        MultiDocumenter.MultiDocRef(
+                            upstream = joinpath(clonedir, "JuliaInterpreter"),
+                            path = "debug",
+                            name = "JuliaInterpreter",
+                            giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
+                        ),
+                        MultiDocumenter.MultiDocRef(
+                            upstream = joinpath(clonedir, "Lux"),
+                            path = "lux",
+                            name = "Lux",
+                            giturl = "https://github.com/avik-pal/Lux.jl",
+                        ),
+                    ],
                 ),
-            ]),
-            MultiDocumenter.Column("Column 2", [
-                MultiDocumenter.MultiDocRef(
-                    upstream = joinpath(clonedir, "Infiltrator"),
-                    path = "inf",
-                    name = "Infiltrator",
-                    giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
+                MultiDocumenter.Column(
+                    "Column 2",
+                    [
+                        MultiDocumenter.MultiDocRef(
+                            upstream = joinpath(clonedir, "Infiltrator"),
+                            path = "inf",
+                            name = "Infiltrator",
+                            giturl = "https://github.com/JuliaDebug/Infiltrator.jl.git",
+                        ),
+                        MultiDocumenter.MultiDocRef(
+                            upstream = joinpath(clonedir, "JuliaInterpreter"),
+                            path = "debug",
+                            name = "JuliaInterpreter",
+                            giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
+                        ),
+                    ],
                 ),
-                MultiDocumenter.MultiDocRef(
-                    upstream = joinpath(clonedir, "JuliaInterpreter"),
-                    path = "debug",
-                    name = "JuliaInterpreter",
-                    giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
-                ),
-            ]),
-        ]),
+            ],
+        ),
         MultiDocumenter.MultiDocRef(
             upstream = joinpath(clonedir, "DataSets"),
             path = "data",
@@ -74,12 +86,12 @@ using Test
         docs;
         search_engine = MultiDocumenter.SearchConfig(
             index_versions = ["stable", "dev"],
-            engine = MultiDocumenter.FlexSearch
+            engine = MultiDocumenter.FlexSearch,
         ),
         custom_scripts = [
             "foo/bar.js",
             "https://foo.com/bar.js",
-            Docs.HTML("const foo = 'bar';")
+            Docs.HTML("const foo = 'bar';"),
         ],
         rootpath = rootpath,
     )
@@ -99,10 +111,22 @@ using Test
     @testset "custom scripts" begin
         index = read(joinpath(outpath, "inf", "stable", "index.html"), String)
 
-        @test occursin("""<script charset="utf-8" type="text/javascript">window.MULTIDOCUMENTER_ROOT_PATH = '$rootpath'</script>""", index)
-        @test occursin("""<script charset="utf-8" src="../../foo/bar.js" type="text/javascript"></script>""", index)
-        @test occursin("""<script charset="utf-8" src="https://foo.com/bar.js" type="text/javascript"></script>""", index)
-        @test occursin("""<script charset="utf-8" type="text/javascript">const foo = 'bar';</script>""", index)
+        @test occursin(
+            """<script charset="utf-8" type="text/javascript">window.MULTIDOCUMENTER_ROOT_PATH = '$rootpath'</script>""",
+            index,
+        )
+        @test occursin(
+            """<script charset="utf-8" src="../../foo/bar.js" type="text/javascript"></script>""",
+            index,
+        )
+        @test occursin(
+            """<script charset="utf-8" src="https://foo.com/bar.js" type="text/javascript"></script>""",
+            index,
+        )
+        @test occursin(
+            """<script charset="utf-8" type="text/javascript">const foo = 'bar';</script>""",
+            index,
+        )
     end
 
     @testset "flexsearch" begin
@@ -116,6 +140,6 @@ using Test
         @test !occursin("/inf/dev/", store_content)
     end
 
-    rm(outpath, recursive=true, force=true)
-    rm(clonedir, recursive=true, force=true)
+    rm(outpath, recursive = true, force = true)
+    rm(clonedir, recursive = true, force = true)
 end
