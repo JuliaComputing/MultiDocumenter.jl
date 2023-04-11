@@ -89,7 +89,8 @@ const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine =
         custom_scripts = [],
         search_engine = SearchConfig(),
         prettyurls = true,
-        rootpath = "/"
+        rootpath = "/",
+        hide_previews = true,
     )
 
 Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`.
@@ -102,7 +103,8 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
   `Docs.HTML` objects are inserted as the content of inline scripts.
 - `search_engine` inserts a global search bar if not `false`. See [`SearchConfig`](@ref) for more details.
 - `prettyurls` removes all `index.html` suffixes from links in the global navigation.
--`rootpath` is the path your site ends up being deployed at, e.g. `/foo/` if it's hosted at `https://bar.com/foo`
+- `rootpath` is the path your site ends up being deployed at, e.g. `/foo/` if it's hosted at `https://bar.com/foo`
+- `hide_previews` removes preview builds from the aggregated documentation.
 """
 function make(
     outdir,
@@ -114,10 +116,11 @@ function make(
     search_engine = DEFAULT_ENGINE,
     prettyurls = true,
     rootpath = "/",
+    hide_previews = true,
 )
     maybe_clone(flatten_multidocrefs(docs))
 
-    dir = make_output_structure(flatten_multidocrefs(docs), prettyurls)
+    dir = make_output_structure(flatten_multidocrefs(docs), prettyurls, hide_previews)
     out_assets = joinpath(dir, "assets")
     if assets_dir !== nothing && isdir(assets_dir)
         cp(assets_dir, out_assets)
@@ -189,7 +192,7 @@ function maybe_clone(docs::Vector{MultiDocRef})
     end
 end
 
-function make_output_structure(docs::Vector{MultiDocRef}, prettyurls)
+function make_output_structure(docs::Vector{MultiDocRef}, prettyurls, hide_previews)
     dir = mktempdir()
 
     for doc in docs
@@ -201,6 +204,11 @@ function make_output_structure(docs::Vector{MultiDocRef}, prettyurls)
         gitpath = joinpath(outpath, ".git")
         if isdir(gitpath)
             rm(gitpath, recursive = true)
+        end
+
+        previewpath = joinpath(outpath, "previews")
+        if hide_previews && isdir(previewpath)
+            rm(previewpath, recursive = true)
         end
     end
 

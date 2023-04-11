@@ -98,6 +98,7 @@ using Test
 
     @testset "structure" begin
         @test isdir(outpath, "inf")
+        @test !isdir(outpath, "inf", "previews")
         @test isdir(outpath, "inf", "stable")
         @test isfile(outpath, "inf", "stable", "index.html")
 
