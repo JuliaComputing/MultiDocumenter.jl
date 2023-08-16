@@ -115,5 +115,5 @@ if "deploy" in ARGS
     end
 else
     @info "Skipping deployment, 'deploy' not passed. Generated files in docs/out." ARGS
-    cp(outpath, joinpath(@__DIR__, "out"), force=true)
+    cp(outpath, joinpath(@__DIR__, "out"), force = true)
 end
