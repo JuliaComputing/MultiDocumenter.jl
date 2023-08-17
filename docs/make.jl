@@ -1,6 +1,7 @@
 using MultiDocumenter
 
-clonedir = mktempdir()
+clonedir = ("--no-temp" in ARGS) ? joinpath(@__DIR__, "clones") : mktempdir()
+outpath = mktempdir()
 
 docs = [
     MultiDocumenter.DropdownNav(
@@ -68,8 +69,6 @@ docs = [
         # giturl = "git@github.com:JuliaComputing/DataSets.jl.git",
     ),
 ]
-
-outpath = mktempdir()
 
 MultiDocumenter.make(
     outpath,
