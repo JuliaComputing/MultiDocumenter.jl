@@ -1,6 +1,7 @@
 using MultiDocumenter
 
-clonedir = mktempdir()
+clonedir = ("--no-temp" in ARGS) ? joinpath(@__DIR__, "clones") : mktempdir()
+outpath = mktempdir()
 
 docs = [
     MultiDocumenter.DropdownNav(
@@ -69,8 +70,6 @@ docs = [
     ),
 ]
 
-outpath = mktempdir()
-
 MultiDocumenter.make(
     outpath,
     docs;
@@ -79,6 +78,8 @@ MultiDocumenter.make(
         engine = MultiDocumenter.FlexSearch,
     ),
     rootpath = "/MultiDocumenter.jl/",
+    sitemap = true,
+    urlroot = "https://juliacomputing.github.io/",
 )
 
 if "deploy" in ARGS

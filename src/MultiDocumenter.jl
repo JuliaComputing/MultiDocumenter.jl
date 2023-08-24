@@ -125,6 +125,10 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 - `canonical`: if set to the root URL of the MultiDocumenter site, will check and, if necessary, update the
   canonical URL tags for each package site to point to the directory. Similar to the `canonical` argument of
   `Documenter.HTML` constructor.
+- `sitemap`, if enabled, will generate a `sitemap.xml` file at the root of the output directory. Requires `urlroot` to be set.
+- `sitemap_filename` can be used to override the default sitemap filename (`sitemap.xml`)
+- `urlroot` can be used to specify the scheme and authority (domain) part of the URL where the documentation is hosted
+  (e.g. `https://example.com`). This is currently only required when `sitemap = true`.
 """
 function make(
     outdir,
@@ -138,7 +142,32 @@ function make(
     rootpath = "/",
     hide_previews = true,
     canonical::Union{AbstractString,Nothing} = nothing,
+    sitemap::Bool = false,
+    sitemap_filename::AbstractString = "sitemap.xml",
+    urlroot::Union{AbstractString, Nothing} = nothing,
 )
+    if !isnothing(urlroot)
+        if !startswith(urlroot, r"^https?://")
+            throw(ArgumentError("""
+            Invalid urlroot: $(urlroot)
+            urlroot must start with http:// or https://"""))
+        end
+        # We'll strip any trailing /-s though, in case the user passed something like
+        # https://example.org/, because we want to concatenate the file paths with `/`
+        urlroot = rstrip(urlroot, '/')
+    end
+    if sitemap === true && isnothing(urlroot)
+        throw(ArgumentError("When sitemap=true, urlroot must also be set"))
+    end
+    # We'll normalize rootpath to have /-s at the beginning and at the end, so that we
+    # can assume that when concatenating this to other paths
+    if !startswith(rootpath, "/")
+        rootpath = string('/', rootpath)
+    end
+    if !endswith(rootpath, "/")
+        rootpath = string(rootpath, '/')
+    end
+
     maybe_clone(flatten_multidocrefs(docs))
 
     if !isnothing(canonical)
@@ -181,6 +210,14 @@ function make(
             flatten_multidocrefs(docs),
             search_engine,
             rootpath,
+        )
+    end
+
+    if sitemap === true
+        make_sitemap(;
+            sitemap_root = string(urlroot, rootpath),
+            sitemap_filename,
+            docs_root_directory = dir
         )
     end
 
@@ -429,5 +466,8 @@ function inject_styles_and_global_navigation(
         end
     end
 end
+
+include("walkdocs.jl")
+include("sitemap.jl")
 
 end
