@@ -254,6 +254,17 @@ function maybe_clone(docs::Vector{MultiDocRef})
             run(
                 `$(git()) clone --depth 1 $(doc.giturl) --branch $(doc.branch) --single-branch $(doc.upstream)`,
             )
+        else
+            @info "Updating existing clone at $(doc.upstream)"
+            run(`$(git()) -C $(doc.upstream) fetch origin $(doc.branch)`)
+            current_branch = strip(read(`$(git()) -C $(doc.upstream) rev-parse --abbrev-ref HEAD`, String))
+            if !isempty(current_branch) && (current_branch != doc.branch)
+                @info "Changing branch: `$current_branch` -> `$(doc.branch)`"
+                run(`$(git()) -C $(doc.upstream) checkout $(doc.branch)`)
+            elseif isempty(current_branch)
+                @error "current_branch was empty"
+            end
+            run(`$(git()) -C $(doc.upstream) reset --hard origin/$(doc.branch)`)
         end
     end
 end
