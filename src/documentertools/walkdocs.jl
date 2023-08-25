@@ -26,6 +26,9 @@ Checks if the file is a Documenter-generated HTML file.
 """
 function isdochtml(fileinfo::FileInfo)
     _, ext = splitext(fileinfo.filename)
+    # While currently the function only checks for the file extension, the semantics of
+    # this predicate are such that it might also look at the contents of the file and do
+    # other heuristics. I.e. we can make this function smarted as needed.
     return ext == ".html"
 end
 
