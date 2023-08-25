@@ -144,7 +144,7 @@ function make(
     canonical::Union{AbstractString,Nothing} = nothing,
     sitemap::Bool = false,
     sitemap_filename::AbstractString = "sitemap.xml",
-    urlroot::Union{AbstractString, Nothing} = nothing,
+    urlroot::Union{AbstractString, Nothing} = canonical,
 )
     if !isnothing(urlroot)
         if !startswith(urlroot, r"^https?://")
