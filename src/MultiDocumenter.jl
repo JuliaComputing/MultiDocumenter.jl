@@ -4,6 +4,12 @@ import Gumbo, AbstractTrees
 using HypertextLiteral
 import Git: git
 
+module DocumenterTools
+import Gumbo, AbstractTrees
+include("documentertools/walkdocs.jl")
+include("documentertools/canonical_urls.jl")
+end
+
 """
     SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch, lowfi = false)
 
@@ -25,13 +31,22 @@ struct MultiDocRef
     path::String
     name::String
 
+    fix_canonical_url::Bool
+
     # these are not actually used internally
     giturl::String
     branch::String
 end
 
-function MultiDocRef(; upstream, name, path, giturl = "", branch = "gh-pages")
-    MultiDocRef(upstream, path, name, giturl, branch)
+function MultiDocRef(;
+    upstream,
+    name,
+    path,
+    giturl = "",
+    branch = "gh-pages",
+    fix_canonical_url = true,
+)
+    MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch)
 end
 
 struct DropdownNav
@@ -60,13 +75,11 @@ function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
         for dir in dirs
             dirpath = joinpath(p, dir)
             isdir(dirpath) || continue
-            for (r, _, files) in walkdir(dirpath)
-                for file in files
-                    file == "index.html" || continue
-
-                    # +1 for path separator
-                    f(chop(r, head = length(root) + 1, tail = 0), joinpath(r, file))
-                end
+            DocumenterTools.walkdocs(
+                dirpath,
+                fileinfo -> fileinfo.filename == "index.html",
+            ) do fileinfo
+                f(relpath(dirname(fileinfo.fullpath), root), fileinfo.fullpath)
             end
             break
         end
@@ -76,6 +89,7 @@ end
 include("renderers.jl")
 include("search/flexsearch.jl")
 include("search/stork.jl")
+include("canonical.jl")
 
 const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine = FlexSearch)
 
@@ -91,6 +105,7 @@ const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine =
         prettyurls = true,
         rootpath = "/",
         hide_previews = true,
+        canonical = nothing,
     )
 
 Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`.
@@ -105,6 +120,9 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 - `prettyurls` removes all `index.html` suffixes from links in the global navigation.
 - `rootpath` is the path your site ends up being deployed at, e.g. `/foo/` if it's hosted at `https://bar.com/foo`
 - `hide_previews` removes preview builds from the aggregated documentation.
+- `canonical`: if set to the root URL of the MultiDocumenter site, will check and, if necessary, update the
+  canonical URL tags for each package site to point to the directory. Similar to the `canonical` argument of
+  `Documenter.HTML` constructor.
 """
 function make(
     outdir,
@@ -117,10 +135,19 @@ function make(
     prettyurls = true,
     rootpath = "/",
     hide_previews = true,
+    canonical::Union{AbstractString,Nothing} = nothing,
 )
     maybe_clone(flatten_multidocrefs(docs))
 
-    dir = make_output_structure(flatten_multidocrefs(docs), prettyurls, hide_previews)
+    if !isnothing(canonical)
+        canonical = rstrip(canonical, '/')
+    end
+    dir = make_output_structure(
+        flatten_multidocrefs(docs),
+        prettyurls,
+        hide_previews;
+        canonical,
+    )
     out_assets = joinpath(dir, "assets")
     if assets_dir !== nothing && isdir(assets_dir)
         cp(assets_dir, out_assets)
@@ -192,7 +219,12 @@ function maybe_clone(docs::Vector{MultiDocRef})
     end
 end
 
-function make_output_structure(docs::Vector{MultiDocRef}, prettyurls, hide_previews)
+function make_output_structure(
+    docs::Vector{MultiDocRef},
+    prettyurls,
+    hide_previews;
+    canonical::Union{AbstractString,Nothing},
+)
     dir = mktempdir()
 
     for doc in docs
@@ -210,6 +242,8 @@ function make_output_structure(docs::Vector{MultiDocRef}, prettyurls, hide_previ
         if hide_previews && isdir(previewpath)
             rm(previewpath, recursive = true)
         end
+
+        fix_canonical_url!(doc; canonical, root_dir = dir)
     end
 
     open(joinpath(dir, "index.html"), "w") do io

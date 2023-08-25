@@ -2,6 +2,10 @@ using MultiDocumenter
 using Test
 
 @testset "MultiDocumenter.jl" begin
+    @testset "DocumenterTools vendored helpers" begin
+        include("documentertools.jl")
+    end
+
     clonedir = mktempdir()
 
     docs = [
