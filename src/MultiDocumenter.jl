@@ -75,10 +75,7 @@ function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
         for dir in dirs
             dirpath = joinpath(p, dir)
             isdir(dirpath) || continue
-            DocumenterTools.walkdocs(
-                dirpath,
-                fileinfo -> fileinfo.filename == "index.html",
-            ) do fileinfo
+            DocumenterTools.walkdocs(dirpath, DocumenterTools.isdochtml) do fileinfo
                 f(relpath(dirname(fileinfo.fullpath), root), fileinfo.fullpath)
             end
             break
