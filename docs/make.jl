@@ -79,6 +79,8 @@ MultiDocumenter.make(
         engine = MultiDocumenter.FlexSearch,
     ),
     rootpath = "/MultiDocumenter.jl/",
+    canonical_domain = "https://juliacomputing.github.io/",
+    sitemap = true,
 )
 
 if "deploy" in ARGS
