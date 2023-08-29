@@ -218,6 +218,30 @@ MultiDocumenter.make(
             @test MultiDocumenter.normalize_canonical_url("index.html") == "index.html"
         end
 
+        @testset "make_sitemap_bytes" begin
+            @test MultiDocumenter.make_sitemap_bytes(String[]) == b"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            </urlset>
+            """
+            @test MultiDocumenter.make_sitemap_bytes(String["foo"]) == b"""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <url><loc>foo</loc></url>
+            </urlset>
+            """
+            @test_logs (:warn,) MultiDocumenter.make_sitemap_bytes(["foo" for _ = 1:45_000])
+            @test_throws MultiDocumenter.SitemapTooLargeError MultiDocumenter.make_sitemap_bytes([
+                "foo" for _ = 1:50_001
+            ])
+            @test_logs (:warn,) MultiDocumenter.make_sitemap_bytes([
+                "x"^4500 for _ = 1:10_000
+            ])
+            @test_throws MultiDocumenter.SitemapTooLargeError MultiDocumenter.make_sitemap_bytes([
+                "x"^6500 for _ = 1:10_000
+            ])
+        end
+
         sitemap_content = read(joinpath(outpath, "sitemap-mydocs.xml"), String)
         @test occursin(
             "https://example.org/MultiDocumenter.jl/inf/stable/",

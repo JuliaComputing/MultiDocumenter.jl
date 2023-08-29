@@ -6,8 +6,31 @@
 # Franklin's implementation is more general that this here, but it looks like it relies
 # of Franklin-specific globals, so it's not a trivial copy-paste into a separate package.
 
+# The sitemap spec limits the size of the sitemap, both in terms of number of entires
+# and the total filesize (https://www.sitemaps.org//protocol.html#index).
 const SITEMAP_URL_LIMIT = 50_000
 const SITEMAP_SIZE_LIMIT = 52_428_800
+const SITEMAP_LIMIT_MSG = "Sitemaps are limited to $(SITEMAP_URL_LIMIT) URLs and a maximum filesize if $(SITEMAP_SIZE_LIMIT) bytes."
+
+struct SitemapTooLargeError <: Exception
+    msg::String
+    value::Int
+    limit::Int
+end
+function Base.showerror(io::IO, e::SitemapTooLargeError)
+    println(io, "SitemapTooLargeError: $(e.msg)")
+    println(io, " limit is $(e.limit), but sitemap has $(e.value)")
+    print(io, SITEMAP_LIMIT_MSG)
+end
+function check_sitemap_size_limit(msg::AbstractString, value::Integer, limit::Integer)
+    if value > limit
+        throw(SitemapTooLargeError(msg, value, limit))
+    elseif value > div(limit, 10) * 8
+        # Soft limits are 80% of the full limit
+        @warn "Sitemap too large: $(msg) (> 80% soft limit)\n$(SITEMAP_LIMIT_MSG)"
+    end
+    return nothing
+end
 
 function make_sitemap(;
     sitemap_filename::AbstractString,
@@ -20,33 +43,35 @@ function make_sitemap(;
         @error "No sitemap URLs found"
         return
     end
+    sitemap_bytes = make_sitemap_bytes(sitemap_urls)
+    # Write the actual sitemap.xml file into the output directory
+    write(joinpath(docs_root_directory, sitemap_filename), sitemap_bytes)
+end
 
+function make_sitemap_bytes(sitemap_urls)::Vector{UInt8}
+    # Sitemaps are limited to 50 000 URLs: https://www.sitemaps.org/protocol.html#index
+    # TODO: we could automatically split the sitemap up if it's bigger than that and
+    # generate a sitemap index.
+    check_sitemap_size_limit("too many URLs", length(sitemap_urls), SITEMAP_URL_LIMIT)
     sitemap_buffer = IOBuffer()
     write(
         sitemap_buffer,
         """
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-""",
+        <?xml version="1.0" encoding="UTF-8"?>
+        <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        """,
     )
     for loc in sort(sitemap_urls)
         write(sitemap_buffer, "<url><loc>$(loc)</loc></url>\n")
     end
     write(sitemap_buffer, "</urlset>\n")
-
-    # Sitemaps are limited to 50 000 URLs: https://www.sitemaps.org/protocol.html#index
-    # TODO: we could automatically split the sitemap up if it's bigger than that and
-    # generate a sitemap index.
-    if length(sitemap_urls) > SITEMAP_URL_LIMIT
-        @warn "Sitemap file has too many items: $(length(canonical_urls)) (limit: $(SITEMAP_URL_LIMIT))"
-    end
     sitemap_bytes = take!(sitemap_buffer)
-    if length(sitemap_bytes) > SITEMAP_SIZE_LIMIT
-        @warn "Sitemap is too large: $(length(sitemap_bytes)) bytes (limit: $(SITEMAP_SIZE_LIMIT))"
-    end
-
-    # Write the actual sitemap.xml file into the output directory
-    write(joinpath(docs_root_directory, sitemap_filename), sitemap_bytes)
+    check_sitemap_size_limit(
+        "sitemap too large (bytes)",
+        length(sitemap_bytes),
+        SITEMAP_SIZE_LIMIT,
+    )
+    return sitemap_bytes
 end
 
 function find_sitemap_urls(;
