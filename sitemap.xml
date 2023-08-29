@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/data/dev/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/data/dev/design/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/data/dev/reference/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/data/dev/search/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/data/dev/tutorial/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/debug/stable/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/debug/stable/ast/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/debug/stable/dev_reference/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/debug/stable/internals/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/debug/stable/search/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/inf/stable/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/inf/stable/API/</loc></url>
+<url><loc>https://juliacomputing.github.io/MultiDocumenter.jl/inf/stable/search/</loc></url>
+</urlset>
