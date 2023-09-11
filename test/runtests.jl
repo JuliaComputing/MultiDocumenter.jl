@@ -169,8 +169,12 @@ MultiDocumenter.make(
         @test !isempty(store_content)
         @test occursin("Infiltrator.jl", store_content)
         @test occursin("@infiltrate", store_content)
-        @test occursin("$(rootpath)inf/stable/", store_content)
-        @test occursin("$(rootpath)inf/stable/", store_content)
+        # We can't traverse symlinks on Windows, so stable/ things do not get
+        # written into the search index.
+        if !Sys.iswindows()
+            @test occursin("$(rootpath)inf/stable/", store_content)
+            @test occursin("$(rootpath)inf/stable/", store_content)
+        end
         @test !occursin("/inf/dev/", store_content)
     end
 
