@@ -246,8 +246,28 @@ function maybe_clone(docs::Vector{MultiDocRef})
         if !isdir(doc.upstream)
             @info "Upstream at $(doc.upstream) does not exist. `git clone`ing `$(doc.giturl)#$(doc.branch)`"
             run(
-                `$(git()) clone --depth 1 $(doc.giturl) --branch $(doc.branch) --single-branch $(doc.upstream)`,
+                `$(git()) clone --depth 1 $(doc.giturl) --branch $(doc.branch) --single-branch --no-tags $(doc.upstream)`,
             )
+        else
+            git_dir, git_worktree = abspath(joinpath(doc.upstream, ".git")), abspath(doc.upstream)
+            if !isdir(git_dir)
+                @warn "Unable to update existing clone at $(doc.upstream): .git/ directory missing"
+                continue
+            end
+            @info "Updating existing clone at $(doc.upstream)"
+            gitcmd = `$(git()) -C $(git_worktree) --git-dir=$(git_dir)`
+            try
+                if !success(`$(gitcmd) diff HEAD --exit-code`)
+                    @warn "Existing clone at $(doc.upstream) has local changes -- not updating."
+                    continue
+                end
+                run(`$(gitcmd) fetch origin $(doc.branch)`)
+                run(`$(gitcmd) checkout --detach origin/$(doc.branch)`)
+            catch e
+                # We're only interested in catching `git` errors here
+                isa(e, ProcessFailedException) || rethrow()
+                @error "Unable to update existing clone at $(doc.upstream)" exception = (e, catch_backtrace())
+            end
         end
     end
 end
