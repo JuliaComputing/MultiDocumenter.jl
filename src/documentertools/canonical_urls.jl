@@ -101,7 +101,9 @@ function update_canonical_links(docs_directory::AbstractString; canonical::Abstr
         # We'll skip all files. This includes files such as index.html, which in this
         # directory will likely be the redirect. Also, links should be pointing to other
         # versions, so we'll skip them too.
-        if !isdir(path) || islink(path)
+        # Note: we need to check islink() first, because on windows, calling isdir() on a
+        # symlink can make it throw a permissions IOError...
+        if islink(path) || !isdir(path)
             continue
         end
         # Preview directory is should contain other Documenter directories, so we just add

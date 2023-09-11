@@ -74,6 +74,12 @@ function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
         p = joinpath(root, ref.path)
         for dir in dirs
             dirpath = joinpath(p, dir)
+            # Symlinks do not really work on Windows. There are permissions problems and we can not
+            # actually traverse them.
+            if Sys.iswindows() && islink(dirpath)
+                @warn "[WINDOWS] Symlink encountered at $(dirpath) -- excluding from search index, since symlinks are not properly supported on Windows."
+                continue
+            end
             isdir(dirpath) || continue
             DocumenterTools.walkdocs(dirpath, DocumenterTools.isdochtml) do fileinfo
                 f(relpath(dirname(fileinfo.fullpath), root), fileinfo.fullpath)
