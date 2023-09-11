@@ -112,7 +112,7 @@ MultiDocumenter.make(
             # symlinks, but then you would run into permission errors with isdir().
             # So we need to have platform-specific test logic here.
             path = joinpath(outpath, "inf", "stable")
-            @test islink(path) || isdir(path)
+            @test islink(path) || isfile(path)
         else
             @test isdir(outpath, "inf", "stable")
             @test isfile(outpath, "inf", "stable", "index.html")
