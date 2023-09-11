@@ -151,9 +151,12 @@ MultiDocumenter.make(
     end
 
     @testset "canonical URLs" begin
-        index = read(joinpath(outpath, "inf", "stable", "index.html"), String)
-        canonical_href = "<link href=\"https://example.org/MultiDocumenter.jl/inf/stable/\" rel=\"canonical\"/>"
-        @test occursin(canonical_href, index)
+        # We can't traverse symlinks on Windows, so we ignore this case
+        if !Sys.iswindows()
+            index = read(joinpath(outpath, "inf", "stable", "index.html"), String)
+            canonical_href = "<link href=\"https://example.org/MultiDocumenter.jl/inf/stable/\" rel=\"canonical\"/>"
+            @test occursin(canonical_href, index)
+        end
 
         index = read(joinpath(outpath, "inf", "v1.6.0", "index.html"), String)
         canonical_href = "<link href=\"https://example.org/MultiDocumenter.jl/inf/stable/\" rel=\"canonical\"/>"
