@@ -499,10 +499,13 @@ end
 
 struct SymlinkOnWindowsError <: Exception end
 function Base.showerror(io::IO, err::SymlinkOnWindowsError)
-    print(io, """
-    SymlinkOnWindowsError: this builds requires symlinks, but these are not properly supported in Windows
-     You can still run the build interactively for debugging/testing (i.e. in the REPL), but the
-     build will not exactly match the full build.""")
+    print(
+        io,
+        """
+SymlinkOnWindowsError: this builds requires symlinks, but these are not properly supported in Windows
+ You can still run the build interactively for debugging/testing (i.e. in the REPL), but the
+ build will not exactly match the full build.""",
+    )
     print(io, err.msg)
 end
 
