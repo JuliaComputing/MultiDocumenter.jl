@@ -3,6 +3,8 @@ import MultiDocumenter: DocumenterTools
 
 FIXTURES = joinpath(@__DIR__, "fixtures")
 
+normalize_newlines(s::AbstractString) = replace(s, "\r\n" => "\n")
+
 @testset "walkdocs" begin
     let fileinfos = DocumenterTools.FileInfo[]
         rs = DocumenterTools.walkdocs(joinpath(FIXTURES, "pre")) do fileinfo
@@ -123,8 +125,8 @@ end
             canonical = "https://example.org/this-is-test",
         )
         DocumenterTools.walkdocs(joinpath(FIXTURES, "post")) do fileinfo
-            post = read(fileinfo.fullpath, String)
-            changed = read(joinpath(out, fileinfo.relpath), String)
+            post = normalize_newlines(read(fileinfo.fullpath, String))
+            changed = normalize_newlines(read(joinpath(out, fileinfo.relpath), String))
             if changed != post
                 @error "update_canonical_links: change and post not matching" out fileinfo
             end
