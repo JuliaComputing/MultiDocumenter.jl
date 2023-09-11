@@ -4,6 +4,12 @@ import Gumbo, AbstractTrees
 using HypertextLiteral
 import Git: git
 
+module DocumenterTools
+import Gumbo, AbstractTrees
+include("documentertools/walkdocs.jl")
+include("documentertools/canonical_urls.jl")
+end
+
 """
     SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch, lowfi = false)
 
@@ -25,13 +31,22 @@ struct MultiDocRef
     path::String
     name::String
 
+    fix_canonical_url::Bool
+
     # these are not actually used internally
     giturl::String
     branch::String
 end
 
-function MultiDocRef(; upstream, name, path, giturl = "", branch = "gh-pages")
-    MultiDocRef(upstream, path, name, giturl, branch)
+function MultiDocRef(;
+    upstream,
+    name,
+    path,
+    giturl = "",
+    branch = "gh-pages",
+    fix_canonical_url = true,
+)
+    MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch)
 end
 
 struct DropdownNav
@@ -60,13 +75,8 @@ function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
         for dir in dirs
             dirpath = joinpath(p, dir)
             isdir(dirpath) || continue
-            for (r, _, files) in walkdir(dirpath)
-                for file in files
-                    file == "index.html" || continue
-
-                    # +1 for path separator
-                    f(chop(r, head = length(root) + 1, tail = 0), joinpath(r, file))
-                end
+            DocumenterTools.walkdocs(dirpath, DocumenterTools.isdochtml) do fileinfo
+                f(relpath(dirname(fileinfo.fullpath), root), fileinfo.fullpath)
             end
             break
         end
@@ -76,6 +86,8 @@ end
 include("renderers.jl")
 include("search/flexsearch.jl")
 include("search/stork.jl")
+include("canonical.jl")
+include("sitemap.jl")
 
 const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine = FlexSearch)
 
@@ -91,6 +103,7 @@ const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine =
         prettyurls = true,
         rootpath = "/",
         hide_previews = true,
+        canonical = nothing,
     )
 
 Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`.
@@ -105,6 +118,13 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 - `prettyurls` removes all `index.html` suffixes from links in the global navigation.
 - `rootpath` is the path your site ends up being deployed at, e.g. `/foo/` if it's hosted at `https://bar.com/foo`
 - `hide_previews` removes preview builds from the aggregated documentation.
+- `canonical_domain`: determines the the schema and authority (domain) of the (e.g. `https://example.org`)
+  deployed site. If set, MultiDocumenter will check and, if necessary, update the canonical URL tags for each
+  package site to point to the correct place directory. Similar to the `canonical` argument of `Documenter.HTML`
+  constructor, except that it should not contain the path component -- that is determined from `rootpath`.
+- `sitemap`, if enabled, will generate a `sitemap.xml` file at the root of the output directory. Requires
+  `canonical_domain` to be set, since the sitemap is determined from canonical URLs.
+- `sitemap_filename` can be used to override the default sitemap filename (`sitemap.xml`)
 """
 function make(
     outdir,
@@ -117,10 +137,42 @@ function make(
     prettyurls = true,
     rootpath = "/",
     hide_previews = true,
+    canonical_domain::Union{AbstractString,Nothing} = nothing,
+    sitemap::Bool = false,
+    sitemap_filename::AbstractString = "sitemap.xml",
 )
+    if isnothing(canonical_domain)
+        (sitemap === true) &&
+            throw(ArgumentError("When sitemap=true, canonical_domain must also be set"))
+    else
+        !isnothing(canonical_domain)
+        if !startswith(canonical_domain, r"^https?://")
+            throw(ArgumentError("""
+            Invalid value for canonical_domain: $(canonical_domain)
+            Must start with http:// or https://"""))
+        end
+        # We'll strip any trailing /-s though, in case the user passed something like
+        # https://example.org/, because we want to concatenate the file paths with `/`
+        canonical_domain = rstrip(canonical_domain, '/')
+    end
+    # We'll normalize rootpath to have /-s at the beginning and at the end, so that we
+    # can assume that when concatenating this to other paths
+    if !startswith(rootpath, "/")
+        rootpath = string('/', rootpath)
+    end
+    if !endswith(rootpath, "/")
+        rootpath = string(rootpath, '/')
+    end
+    site_root_url = string(canonical_domain, rstrip(rootpath, '/'))
+
     maybe_clone(flatten_multidocrefs(docs))
 
-    dir = make_output_structure(flatten_multidocrefs(docs), prettyurls, hide_previews)
+    dir = make_output_structure(
+        flatten_multidocrefs(docs),
+        prettyurls,
+        hide_previews;
+        canonical = site_root_url,
+    )
     out_assets = joinpath(dir, "assets")
     if assets_dir !== nothing && isdir(assets_dir)
         cp(assets_dir, out_assets)
@@ -152,6 +204,14 @@ function make(
             flatten_multidocrefs(docs),
             search_engine,
             rootpath,
+        )
+    end
+
+    if sitemap
+        make_sitemap(;
+            sitemap_root = site_root_url,
+            sitemap_filename,
+            docs_root_directory = dir,
         )
     end
 
@@ -203,7 +263,12 @@ function maybe_clone(docs::Vector{MultiDocRef})
     end
 end
 
-function make_output_structure(docs::Vector{MultiDocRef}, prettyurls, hide_previews)
+function make_output_structure(
+    docs::Vector{MultiDocRef},
+    prettyurls,
+    hide_previews;
+    canonical::Union{AbstractString,Nothing},
+)
     dir = mktempdir()
 
     for doc in docs
@@ -221,6 +286,8 @@ function make_output_structure(docs::Vector{MultiDocRef}, prettyurls, hide_previ
         if hide_previews && isdir(previewpath)
             rm(previewpath, recursive = true)
         end
+
+        fix_canonical_url!(doc; canonical, root_dir = dir)
     end
 
     open(joinpath(dir, "index.html"), "w") do io

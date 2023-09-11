@@ -1,6 +1,19 @@
+# Script to build the MultiDocumenter demo docs
+#
+#   julia --project docs/make.jl [--temp] [deploy]
+#
+# When `deploy` is passed as an argument, it goes into deployment mode
+# and attempts to push the generated site to gh-pages. You can also pass
+# `--temp`, in which case the source repositories are cloned into a temporary
+# directory (as opposed to `docs/clones`).
 using MultiDocumenter
 
-clonedir = mktempdir()
+clonedir = ("--temp" in ARGS) ? mktempdir() : joinpath(@__DIR__, "clones")
+outpath = mktempdir()
+@info """
+Cloning packages into: $(clonedir)
+Building aggregate site into: $(outpath)
+"""
 
 docs = [
     MultiDocumenter.DropdownNav(
@@ -69,8 +82,6 @@ docs = [
     ),
 ]
 
-outpath = mktempdir()
-
 MultiDocumenter.make(
     outpath,
     docs;
@@ -79,6 +90,8 @@ MultiDocumenter.make(
         engine = MultiDocumenter.FlexSearch,
     ),
     rootpath = "/MultiDocumenter.jl/",
+    canonical_domain = "https://juliacomputing.github.io/",
+    sitemap = true,
 )
 
 if "deploy" in ARGS
