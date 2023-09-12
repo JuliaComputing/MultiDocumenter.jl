@@ -84,6 +84,27 @@ docs = [
         # giturl = "git@github.com:JuliaComputing/DataSets.jl.git",
     ),
 ]
+
+if Sys.iswindows()
+    @test_throws ErrorException MultiDocumenter.make(
+        outpath,
+        docs;
+        search_engine = MultiDocumenter.SearchConfig(
+            index_versions = ["stable", "dev"],
+            engine = MultiDocumenter.FlexSearch,
+        ),
+        custom_scripts = [
+            "foo/bar.js",
+            "https://foo.com/bar.js",
+            Docs.HTML("const foo = 'bar';"),
+        ],
+        rootpath = rootpath,
+        canonical_domain = "https://example.org/",
+        sitemap = true,
+        sitemap_filename = "sitemap-mydocs.xml",
+    )
+end
+
 MultiDocumenter.make(
     outpath,
     docs;
