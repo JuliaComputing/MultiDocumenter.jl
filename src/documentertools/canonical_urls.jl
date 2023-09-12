@@ -102,7 +102,7 @@ function update_canonical_links(docs_directory::AbstractString; canonical::Abstr
         # directory will likely be the redirect. Also, links should be pointing to other
         # versions, so we'll skip them too.
         # Note: we need to check islink() first, because on windows, calling isdir() on a
-        # symlink can make it throw a permissions IOError...
+        # symlink can make it throw a permissions IOError.
         if islink(path) || !isdir(path)
             continue
         end

@@ -74,9 +74,7 @@ function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
         p = joinpath(root, ref.path)
         for dir in dirs
             dirpath = joinpath(p, dir)
-            if !_windows_symlink_wrapper(isdir, dirpath)
-                continue
-            end
+            isdir(dirpath) || continue
             DocumenterTools.walkdocs(dirpath, DocumenterTools.isdochtml) do fileinfo
                 f(relpath(dirname(fileinfo.fullpath), root), fileinfo.fullpath)
             end
@@ -481,32 +479,6 @@ function inject_styles_and_global_navigation(
             end
         end
     end
-end
-
-function _windows_symlink_wrapper(f::Base.Callable, path::AbstractString)
-    if Sys.iswindows() && islink(path)
-        if isinteractive()
-            @warn """
-            A symlink was ignored for $(f) at $(path)
-            This only happens when running interactive on Windows."""
-            return false
-        else
-            throw(SymlinkOnWindowsError())
-        end
-    end
-    return f(path)
-end
-
-struct SymlinkOnWindowsError <: Exception end
-function Base.showerror(io::IO, err::SymlinkOnWindowsError)
-    print(
-        io,
-        """
-SymlinkOnWindowsError: this builds requires symlinks, but these are not properly supported in Windows
- You can still run the build interactively for debugging/testing (i.e. in the REPL), but the
- build will not exactly match the full build.""",
-    )
-    print(io, err.msg)
 end
 
 end
