@@ -88,7 +88,9 @@ function update_canonical_links(docs_directory::AbstractString; canonical::Abstr
         redirect_url = get_meta_redirect_url(redirect_index_html_path)
         splitpath(normpath(redirect_url))
     else
-        canonical_version_from_versions_js(docs_directory)
+        # canonical_version_from_versions_js returns just a string, but we want to splat
+        # canonical_path later, so we turn this into a single-element tuple
+        (canonical_version_from_versions_js(docs_directory),)
     end
     canonical_full_root = joinurl(canonical, canonical_path...)
     # If we have determined which version should be the canonical version, we can actually
@@ -201,7 +203,6 @@ function canonical_version_from_versions_js(docs_directory)
     if isempty(versions)
         error("Unable to determine the canonical path. Found no version directories")
     end
-
     non_version_symlinks = filter(vi -> !vi.isversion && vi.symlink, versions)
     canonical_version = if isempty(non_version_symlinks)
         # We didn't find any non-version symlinks, so we'll try to find the vN directory now
