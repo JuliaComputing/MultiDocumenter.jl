@@ -86,5 +86,7 @@ The result of that script is available at [https://juliacomputing.github.io/Mult
 You can of course also just push the output artefact directly to S3 or some other hosting service.
 
 > **Warning**
-> MultiDocumenter sites can not be deployed on Windows right now.
+> MultiDocumenter sites can not be deployed on Windows right now, and the `make()` function will throw an error.
 > See [#70](https://github.com/JuliaComputing/MultiDocumenter.jl/issues/70).
+>
+> It is still possible to develop and debug MultiDocumenter sites on Windows if the build script is run interactively (e.g. by `include`-ing it into a REPL session).
