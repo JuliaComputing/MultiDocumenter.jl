@@ -249,7 +249,8 @@ function maybe_clone(docs::Vector{MultiDocRef})
                 `$(git()) clone --depth 1 $(doc.giturl) --branch $(doc.branch) --single-branch --no-tags $(doc.upstream)`,
             )
         else
-            git_dir, git_worktree = abspath(joinpath(doc.upstream, ".git")), abspath(doc.upstream)
+            git_dir, git_worktree =
+                abspath(joinpath(doc.upstream, ".git")), abspath(doc.upstream)
             if !isdir(git_dir)
                 @warn "Unable to update existing clone at $(doc.upstream): .git/ directory missing"
                 continue
@@ -266,7 +267,8 @@ function maybe_clone(docs::Vector{MultiDocRef})
             catch e
                 # We're only interested in catching `git` errors here
                 isa(e, ProcessFailedException) || rethrow()
-                @error "Unable to update existing clone at $(doc.upstream)" exception = (e, catch_backtrace())
+                @error "Unable to update existing clone at $(doc.upstream)" exception =
+                    (e, catch_backtrace())
             end
         end
     end
