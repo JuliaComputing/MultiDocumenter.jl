@@ -84,3 +84,7 @@ Check [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) and [`docs/
 The result of that script is available at [https://juliacomputing.github.io/MultiDocumenter.jl/](https://juliacomputing.github.io/MultiDocumenter.jl/).
 
 You can of course also just push the output artefact directly to S3 or some other hosting service.
+
+> **Warning**
+> MultiDocumenter sites can not be deployed on Windows right now.
+> See [#70](https://github.com/JuliaComputing/MultiDocumenter.jl/issues/70).

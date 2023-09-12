@@ -85,7 +85,10 @@ docs = [
     ),
 ]
 
-if Sys.iswindows()
+# We do not support deploying docs on Windows at the moment, and MultiDocumenter
+# should throw an error if it's being run on Windows (in a non-interactive session).
+# See also: https://github.com/JuliaComputing/MultiDocumenter.jl/issues/70
+if Sys.iswindows() && !isinteractive()
     @test_throws ErrorException MultiDocumenter.make(
         outpath,
         docs;
