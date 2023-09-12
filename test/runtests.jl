@@ -132,8 +132,7 @@ MultiDocumenter.make(
 
 
     @testset "custom scripts" begin
-        index = read(joinpath(outpath, "inf", "stable", "index.html"), String)
-
+        index = read(joinpath(outpath, "inf", "v1.6.4", "index.html"), String)
         @test occursin(
             """<script charset="utf-8" type="text/javascript">window.MULTIDOCUMENTER_ROOT_PATH = '$rootpath'</script>""",
             index,
@@ -150,6 +149,27 @@ MultiDocumenter.make(
             """<script charset="utf-8" type="text/javascript">const foo = 'bar';</script>""",
             index,
         )
+
+        if !Sys.iswindows()
+            # Going through symlinks does not work on Windows
+            index = read(joinpath(outpath, "inf", "stable", "index.html"), String)
+            @test occursin(
+                """<script charset="utf-8" type="text/javascript">window.MULTIDOCUMENTER_ROOT_PATH = '$rootpath'</script>""",
+                index,
+            )
+            @test occursin(
+                """<script charset="utf-8" src="../../foo/bar.js" type="text/javascript"></script>""",
+                index,
+            )
+            @test occursin(
+                """<script charset="utf-8" src="https://foo.com/bar.js" type="text/javascript"></script>""",
+                index,
+            )
+            @test occursin(
+                """<script charset="utf-8" type="text/javascript">const foo = 'bar';</script>""",
+                index,
+            )
+        end
     end
 
     @testset "canonical URLs" begin
