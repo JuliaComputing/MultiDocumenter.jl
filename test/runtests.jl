@@ -100,6 +100,8 @@ MultiDocumenter.make(
     canonical_domain = "https://example.org/",
     sitemap = true,
     sitemap_filename = "sitemap-mydocs.xml",
+    # The following keyword is not standard:
+    _override_windows_isinteractive_check = Sys.iswindows(),
 )
 
 @testset "MultiDocumenter.jl" begin

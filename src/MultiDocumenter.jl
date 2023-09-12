@@ -140,7 +140,26 @@ function make(
     canonical_domain::Union{AbstractString,Nothing} = nothing,
     sitemap::Bool = false,
     sitemap_filename::AbstractString = "sitemap.xml",
+    # This keyword is for internal test use only:
+    _override_windows_isinteractive_check::Bool = false,
 )
+    if Sys.iswindows() && !isinteractive()
+        if _override_windows_isinteractive_check || isinteractive()
+            @warn """
+            Running a MultiDocumenter build interactively in Windows.
+            This should only be used for development and testing, as it will lead to partial
+            and broken builds. See https://github.com/JuliaComputing/MultiDocumenter.jl/issues/70
+            """
+        else
+            msg = """
+            MultiDocumenter deployments are disabled on Windows due to difficulties
+            with handling symlinks in documentation sources.
+            You _can_ test this build locally by running it interactively (i.e. in the REPL).
+            See also: https://github.com/JuliaComputing/MultiDocumenter.jl/issues/70
+            """
+            error(msg)
+        end
+    end
     if isnothing(canonical_domain)
         (sitemap === true) &&
             throw(ArgumentError("When sitemap=true, canonical_domain must also be set"))
