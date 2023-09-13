@@ -132,5 +132,45 @@ end
             end
             @test changed == post
         end
+
+        # We take the fixtures/pre directory, but copy it over into a temporary
+        # directory, remove index.html and instead use versions.js to determine the stable link
+        # For that we also need to make sure that stable/ is a symlink
+        out = tempname()
+        cp(joinpath(FIXTURES, "pre"), out)
+        rm(joinpath(out, "index.html"))
+        rm(joinpath(out, "stable"), recursive = true)
+        symlink(joinpath(out, "v0.5.0"), joinpath(out, "stable"))
+        open(joinpath(out, "versions.js"), write = true) do io
+            versions_js = """
+            var DOC_VERSIONS = [
+                "stable",
+                "v0.5.0",
+            ];
+            var DOCUMENTER_NEWEST = "v0.5.0";
+            var DOCUMENTER_STABLE = "stable";
+            """
+            write(io, versions_js)
+        end
+        @test DocumenterTools.canonical_directory_from_redirect_index_html(out) === nothing
+        @test DocumenterTools.canonical_version_from_versions_js(out) == "stable"
+        DocumenterTools.update_canonical_links(
+            out;
+            canonical = "https://example.org/this-is-test",
+        )
+        DocumenterTools.walkdocs(joinpath(FIXTURES, "post")) do fileinfo
+            # We removed the root /index.html redirect file, so we skip testing it
+            (fileinfo.relpath == "index.html") && return
+            # We also don't check the stable/ symlink.
+            # Note: the regex is necessary to handle Windows path separators.
+            startswith(fileinfo.relpath, r"stable[\\/]") && return
+            # Compare the file contents for the rest of the files:
+            post = normalize_newlines(read(fileinfo.fullpath, String))
+            changed = normalize_newlines(read(joinpath(out, fileinfo.relpath), String))
+            if changed != post
+                @error "update_canonical_links: change and post not matching" out fileinfo
+            end
+            @test changed == post
+        end
     end
 end
