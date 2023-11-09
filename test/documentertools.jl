@@ -7,7 +7,7 @@ normalize_newlines(s::AbstractString) = replace(s, "\r\n" => "\n")
 
 @testset "walkdocs" begin
     let fileinfos = DocumenterTools.FileInfo[]
-        rs = DocumenterTools.walkdocs(joinpath(FIXTURES, "pre")) do fileinfo
+        rs = DocumenterTools.walkdocs(joinpath(FIXTURES, "simple.pre")) do fileinfo
             push!(fileinfos, fileinfo)
             @test isabspath(fileinfo.root)
             @test isabspath(fileinfo.fullpath)
@@ -20,7 +20,7 @@ normalize_newlines(s::AbstractString) = replace(s, "\r\n" => "\n")
 
     let fileinfos = []
         rs = DocumenterTools.walkdocs(
-            joinpath(FIXTURES, "pre"),
+            joinpath(FIXTURES, "simple.pre"),
             DocumenterTools.isdochtml,
         ) do fileinfo
             push!(fileinfos, fileinfo)
@@ -33,7 +33,10 @@ normalize_newlines(s::AbstractString) = replace(s, "\r\n" => "\n")
         @test length(fileinfos) == 6
     end
 
-    let rs = DocumenterTools.walkdocs(joinpath(FIXTURES, "pre"), collect = true) do fileinfo
+    let rs = DocumenterTools.walkdocs(
+            joinpath(FIXTURES, "simple.pre"),
+            collect = true,
+        ) do fileinfo
             fileinfo.root
         end
         @test length(rs) == 9
@@ -115,16 +118,16 @@ end
         end
     end
 
-    @testset "update_canonical_links" begin
+    @testset "update_canonical_links: simple" begin
         out = tempname()
-        cp(joinpath(FIXTURES, "pre"), out)
+        cp(joinpath(FIXTURES, "simple.pre"), out)
         @test DocumenterTools.canonical_directory_from_redirect_index_html(out) ==
               ["stable"]
         DocumenterTools.update_canonical_links(
             out;
             canonical = "https://example.org/this-is-test",
         )
-        DocumenterTools.walkdocs(joinpath(FIXTURES, "post")) do fileinfo
+        DocumenterTools.walkdocs(joinpath(FIXTURES, "simple.post")) do fileinfo
             post = normalize_newlines(read(fileinfo.fullpath, String))
             changed = normalize_newlines(read(joinpath(out, fileinfo.relpath), String))
             if changed != post
@@ -137,7 +140,7 @@ end
         # directory, remove index.html and instead use versions.js to determine the stable link
         # For that we also need to make sure that stable/ is a symlink
         out = tempname()
-        cp(joinpath(FIXTURES, "pre"), out)
+        cp(joinpath(FIXTURES, "simple.pre"), out)
         rm(joinpath(out, "index.html"))
         rm(joinpath(out, "stable"), recursive = true)
         symlink(joinpath(out, "v0.5.0"), joinpath(out, "stable"))
@@ -158,7 +161,7 @@ end
             out;
             canonical = "https://example.org/this-is-test",
         )
-        DocumenterTools.walkdocs(joinpath(FIXTURES, "post")) do fileinfo
+        DocumenterTools.walkdocs(joinpath(FIXTURES, "simple.post")) do fileinfo
             # We removed the root /index.html redirect file, so we skip testing it
             (fileinfo.relpath == "index.html") && return
             # We also don't check the stable/ symlink.
@@ -172,5 +175,18 @@ end
             end
             @test changed == post
         end
+    end
+
+    # Testing the case where index.html does not have a meta redirect
+    @testset "update_canonical_links: nometa" begin
+        out = tempname()
+        cp(joinpath(FIXTURES, "nometa.pre"), out)
+        @test DocumenterTools.canonical_directory_from_redirect_index_html(out) === nothing
+        @test DocumenterTools.canonical_version_from_versions_js(out) == "stable"
+        # Just
+        @test DocumenterTools.update_canonical_links(
+            out;
+            canonical = "https://example.org/this-is-test",
+        ) === nothing
     end
 end
