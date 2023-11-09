@@ -83,14 +83,11 @@ function update_canonical_links(docs_directory::AbstractString; canonical::Abstr
     docs_directory = abspath(docs_directory)
     isdir(docs_directory) || throw(ArgumentError("No such directory: $(docs_directory)"))
 
-    redirect_index_html_path = joinpath(docs_directory, "index.html")
-    canonical_path = if isfile(redirect_index_html_path)
-        redirect_url = get_meta_redirect_url(redirect_index_html_path)
-        splitpath(normpath(redirect_url))
-    else
+    canonical_path = canonical_directory_from_redirect_index_html(docs_directory)
+    if isnothing(canonical_path)
         # canonical_version_from_versions_js returns just a string, but we want to splat
         # canonical_path later, so we turn this into a single-element tuple
-        (canonical_version_from_versions_js(docs_directory),)
+        canonical_path = (canonical_version_from_versions_js(docs_directory),)
     end
     canonical_full_root = joinurl(canonical, canonical_path...)
     # If we have determined which version should be the canonical version, we can actually
@@ -132,6 +129,7 @@ function canonical_directory_from_redirect_index_html(docs_directory::AbstractSt
     redirect_index_html_path = joinpath(docs_directory, "index.html")
     isfile(redirect_index_html_path) || return nothing
     redirect_url = get_meta_redirect_url(redirect_index_html_path)
+    isnothing(redirect_url) && return nothing
     splitpath(normpath(redirect_url))
 end
 
@@ -189,7 +187,7 @@ function canonical_version_from_versions_js(docs_directory)
     # We'll filter out a couple of potential bad cases and issue warnings
     filter(versions) do vi
         if !vi.path_exists
-            @warn "update_canonical_links: path does not exists or is not a directory" docs_directory vi
+            @warn "update_canonical_links: path does not exist or is not a directory" docs_directory vi
             return false
         end
         return true
