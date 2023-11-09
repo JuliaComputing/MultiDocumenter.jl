@@ -25,15 +25,30 @@ Base.@kwdef mutable struct SearchConfig
     lowfi = false
 end
 
+"""
+    struct MultiDocRef
+
+Represents one set of docs that will get an entry in the MultiDocumenter navigation.
+
+**Required arguments:**
+
+* `upstream`: the local directory where the documentation is located. If `giturl` is passed,
+  MultiDocumenter will clone into this directory.
+* `name`: string used in the MultiDocumenter navigation for this item
+* `path`: the URL path under which the contents of upstream is placed
+
+**Optional arguments:**
+
+* `giturl`: URL of the remote Git repository that will be cloned. If this is unset, then `upstream` must be an existing directory.
+* `branch`: Git branch of `giturl` where the docs will be pulled from (defaults to `gh-pages`)
+* `fix_canonical_url`: this can be set to `false` to disable the canonical URL fixing
+  for this `MultiDocRef` (see also `canonical_domain` for [`make`](@ref)).
+"""
 struct MultiDocRef
     upstream::String
-
     path::String
     name::String
-
     fix_canonical_url::Bool
-
-    # these are not actually used internally
     giturl::String
     branch::String
 end
@@ -263,6 +278,11 @@ end
 function maybe_clone(docs::Vector{MultiDocRef})
     for doc in docs
         if !isdir(doc.upstream)
+            if isempty(doc.giturl)
+                error(
+                    "MultiDocRef for $(doc.name): if giturl= is not passed, then upstream= must be an existing directory",
+                )
+            end
             @info "Upstream at $(doc.upstream) does not exist. `git clone`ing `$(doc.giturl)#$(doc.branch)`"
             run(
                 `$(git()) clone --depth 1 $(doc.giturl) --branch $(doc.branch) --single-branch --no-tags $(doc.upstream)`,
