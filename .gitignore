@@ -1,3 +1,6 @@
 /Manifest.toml
 /docs/out/
 /docs/clones/
+/docs/build/
+/docs/src/index.md
+/docs/src/sample.png
