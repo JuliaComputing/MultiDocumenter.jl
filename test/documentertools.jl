@@ -182,11 +182,14 @@ end
         out = tempname()
         cp(joinpath(FIXTURES, "nometa.pre"), out)
         @test DocumenterTools.canonical_directory_from_redirect_index_html(out) === nothing
-        @test DocumenterTools.canonical_version_from_versions_js(out) == "stable"
-        # Just
-        @test DocumenterTools.update_canonical_links(
-            out;
-            canonical = "https://example.org/this-is-test",
-        ) === nothing
+        if !Sys.iswindows()
+            # These two tests depend on symlinks, so they do not work on Windows
+            @test DocumenterTools.canonical_version_from_versions_js(out) == "stable"
+            # Just tests that the function runs
+            @test DocumenterTools.update_canonical_links(
+                out;
+                canonical = "https://example.org/this-is-test",
+            ) === nothing
+        end
     end
 end
