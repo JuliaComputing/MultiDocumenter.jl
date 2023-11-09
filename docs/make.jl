@@ -7,6 +7,7 @@
 # `--temp`, in which case the source repositories are cloned into a temporary
 # directory (as opposed to `docs/clones`).
 using MultiDocumenter
+import Documenter
 
 clonedir = ("--temp" in ARGS) ? mktempdir() : joinpath(@__DIR__, "clones")
 outpath = mktempdir()
@@ -15,7 +16,42 @@ Cloning packages into: $(clonedir)
 Building aggregate site into: $(outpath)
 """
 
+@info "Building Documenter site for MultiDocumenter"
+open(joinpath(@__DIR__, "src", "index.md"), write = true) do io
+    write(io, read(joinpath(@__DIR__, "..", "README.md")))
+    write(
+        io,
+        """
+
+## Docstrings
+
+```@autodocs
+Modules = [MultiDocumenter]
+```
+""",
+    )
+end
+cp(
+    joinpath(@__DIR__, "..", "sample.png"),
+    joinpath(@__DIR__, "src", "sample.png"),
+    force = true,
+)
+Documenter.makedocs(
+    sitename = "MultiDocumenter",
+    modules = [MultiDocumenter],
+    warnonly = true,
+    pages = ["index.md", "internal.md"],
+)
+
+@info "Building aggregate MultiDocumenter site"
 docs = [
+    # We also add MultiDocumenter's own generated pages
+    MultiDocumenter.MultiDocRef(
+        upstream = joinpath(@__DIR__, "build"),
+        path = "docs",
+        name = "MultiDocumenter",
+        fix_canonical_url = false,
+    ),
     MultiDocumenter.DropdownNav(
         "Debugging",
         [
