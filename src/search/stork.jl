@@ -73,7 +73,7 @@ end
 function render()
     return @htl """
     <div class="search nav-item stork-wrapper">
-        <input id="search-input" class="stork-input" data-stork="multidocumenter" placeholder="Search...">
+        <input id="search-input" class="stork-input" data-stork="multidocumenter" placeholder="Search everywhere..">
         <div data-stork="multidocumenter-output" class="stork-output"></div>
         <div class="search-keybinding">/</div>
     </div>
