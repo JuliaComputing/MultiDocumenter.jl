@@ -47,7 +47,7 @@ Represents one set of docs that will get an entry in the MultiDocumenter navigat
 struct MultiDocRef
     upstream::String
     path::String
-    name::String
+    name::Any
     fix_canonical_url::Bool
     giturl::String
     branch::String

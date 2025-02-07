@@ -110,7 +110,7 @@ end
 function render()
     return @htl """
     <div class="search nav-item">
-        <input id="search-input" placeholder="Search...">
+        <input id="search-input" placeholder="Search everywhere...">
         <ul id="search-result-container" class="suggestions hidden">
         </ul>
         <div class="search-keybinding">/</div>
