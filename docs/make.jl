@@ -87,6 +87,10 @@ docs = [
                         name = "JuliaInterpreter",
                         giturl = "https://github.com/JuliaDebug/JuliaInterpreter.jl.git",
                     ),
+                    MultiDocumenter.Link(
+                        "Lux",
+                        "https://github.com/avik-pal/Lux.jl",
+                    ),
                 ],
             ),
             MultiDocumenter.Column(
