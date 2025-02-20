@@ -281,7 +281,7 @@ function make(
 end
 
 function flatten_multidocrefs(docs::Vector)
-    out = []
+    out = DropdownComponent[]
     for doc in docs
         if doc isa DropdownComponent
             push!(out, doc)
@@ -297,7 +297,7 @@ function flatten_multidocrefs(docs::Vector)
             end
         end
     end
-    out
+    return out
 end
 
 function maybe_clone(docs::Vector)
@@ -336,6 +336,7 @@ function maybe_clone(docs::Vector)
             end
         end
     end
+    return nothing
 end
 
 function make_output_structure(
