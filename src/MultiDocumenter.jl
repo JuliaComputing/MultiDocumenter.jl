@@ -35,9 +35,9 @@ All `DropdownComponent`s go in [`Column`](@ref)s, which go in [`MegaDropdownNav`
 
 Any subtype of `DropdownComponent` must implement that `render` method.
 
-The main subtype is [`MultiDocRef`](@ref), which refers to external documentation 
-and adds it to the search index.  However, there are others like [`ExternalLink`](@ref) 
-which is used to link to external sites without making them searchable, and 
+The main subtype is [`MultiDocRef`](@ref), which refers to external documentation
+and adds it to the search index.  However, there are others like [`ExternalLink`](@ref)
+which is used to link to external sites without making them searchable, and
 users can implement their own custom components.
 """
 abstract type DropdownComponent end
