@@ -26,6 +26,23 @@ Base.@kwdef mutable struct SearchConfig
 end
 
 """
+    abstract type DropdownComponent
+
+The supertype for any component that can be put in a dropdown column and 
+rendered using `MultiDocumenter.render(::YourComponent, thispagepath, dir, prettyurls)`.  
+
+All `DropdownComponent`s go in [`Column`](@ref)s, which go in [`MegaDropdownNav`](@ref).
+
+Any subtype of `DropdownComponent` must implement that `render` method.
+
+The main subtype is [`MultiDocRef`](@ref), which refers to external documentation 
+and adds it to the search index.  However, there are others like [`ExternalLink`](@ref) 
+which is used to link to external sites without making them searchable, and 
+users can implement their own custom components.
+"""
+abstract type DropdownComponent end
+
+"""
     struct MultiDocRef
 
 Represents one set of docs that will get an entry in the MultiDocumenter navigation.
@@ -44,7 +61,7 @@ Represents one set of docs that will get an entry in the MultiDocumenter navigat
 * `fix_canonical_url`: this can be set to `false` to disable the canonical URL fixing
   for this `MultiDocRef` (see also `canonical_domain` for [`make`](@ref)).
 """
-struct MultiDocRef
+struct MultiDocRef <: DropdownComponent
     upstream::String
     path::String
     name::Any
@@ -66,12 +83,12 @@ end
 
 struct DropdownNav
     name::String
-    children::Vector{MultiDocRef}
+    children::Vector{DropdownComponent}
 end
 
 struct Column
     name::Any
-    children::Vector{MultiDocRef}
+    children::Vector{DropdownComponent}
 end
 
 struct MegaDropdownNav
@@ -84,8 +101,8 @@ struct BrandImage
     imagepath::String
 end
 
-function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
-    for ref in docs
+function walk_outputs(f, root, docs::Vector, dirs::Vector{String})
+    for ref in filter(x -> x isa MultiDocRef, docs)
         p = joinpath(root, ref.path)
         for dir in dirs
             dirpath = joinpath(p, dir)
@@ -143,7 +160,7 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 """
 function make(
     outdir,
-    docs::Vector;
+    docs::Vector{DropdownComponent};
     assets_dir = nothing,
     brand_image::Union{Nothing,BrandImage} = nothing,
     custom_stylesheets = [],
@@ -256,9 +273,9 @@ function make(
 end
 
 function flatten_multidocrefs(docs::Vector)
-    out = MultiDocRef[]
+    out = []
     for doc in docs
-        if doc isa MultiDocRef
+        if doc isa DropdownComponent
             push!(out, doc)
         elseif doc isa MegaDropdownNav
             for col in doc.columns
@@ -275,8 +292,8 @@ function flatten_multidocrefs(docs::Vector)
     out
 end
 
-function maybe_clone(docs::Vector{MultiDocRef})
-    for doc in docs
+function maybe_clone(docs::Vector{<: DropdownComponent})
+    for doc in filter(x -> x isa MultiDocRef, docs)
         if !isdir(doc.upstream)
             if isempty(doc.giturl)
                 error(
@@ -314,14 +331,14 @@ function maybe_clone(docs::Vector{MultiDocRef})
 end
 
 function make_output_structure(
-    docs::Vector{MultiDocRef},
+    docs::Vector{<: DropdownComponent},
     prettyurls,
     hide_previews;
     canonical::Union{AbstractString,Nothing},
 )
     dir = mktempdir()
 
-    for doc in docs
+    for doc in Iterators.filter(x -> x isa MultiDocRef, docs)
         outpath = joinpath(dir, doc.path)
 
         mkpath(dirname(outpath))
@@ -355,7 +372,7 @@ end
 
 function make_global_nav(
     dir,
-    docs::Vector,
+    docs::Vector{<: DropdownComponent},
     thispagepath,
     brand_image,
     search_engine,
