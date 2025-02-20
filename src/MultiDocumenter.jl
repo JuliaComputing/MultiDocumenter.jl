@@ -160,7 +160,7 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 """
 function make(
     outdir,
-    docs::Vector{DropdownComponent};
+    docs::Vector;
     assets_dir = nothing,
     brand_image::Union{Nothing,BrandImage} = nothing,
     custom_stylesheets = [],
@@ -292,7 +292,7 @@ function flatten_multidocrefs(docs::Vector)
     out
 end
 
-function maybe_clone(docs::Vector{<: DropdownComponent})
+function maybe_clone(docs::Vector)
     for doc in filter(x -> x isa MultiDocRef, docs)
         if !isdir(doc.upstream)
             if isempty(doc.giturl)
@@ -331,7 +331,7 @@ function maybe_clone(docs::Vector{<: DropdownComponent})
 end
 
 function make_output_structure(
-    docs::Vector{<: DropdownComponent},
+    docs::Vector,
     prettyurls,
     hide_previews;
     canonical::Union{AbstractString,Nothing},
@@ -372,7 +372,7 @@ end
 
 function make_global_nav(
     dir,
-    docs::Vector{<: DropdownComponent},
+    docs::Vector,
     thispagepath,
     brand_image,
     search_engine,
