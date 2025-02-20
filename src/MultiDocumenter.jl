@@ -81,6 +81,14 @@ function MultiDocRef(;
     MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch)
 end
 
+
+struct Link <: MultiDocumenter.DropdownComponent
+    text::String
+    link::String
+end
+
+Link(link::String) = Link(link, link)
+
 struct DropdownNav
     name::String
     children::Vector{DropdownComponent}

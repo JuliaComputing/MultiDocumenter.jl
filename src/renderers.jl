@@ -36,6 +36,12 @@ function render(doc::MultiDocRef, dir, thispagepath, prettyurls)
     """
 end
 
+function render(c::Link, doc, thispage, prettyurls)
+    return @htl """
+    <a href=$(c.link) class="nav-link nav-item">$(c.text)</a>
+    """ # TODO: add "external link" icon after, either chain or arrow exiting box.
+end
+
 function render(doc::DropdownNav, dir, thispagepath, prettyurls)
     return @htl """
     <div class="nav-dropdown">
