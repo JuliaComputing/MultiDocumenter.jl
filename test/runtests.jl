@@ -54,6 +54,10 @@ docs = [
                         name = "Lux",
                         giturl = "https://github.com/avik-pal/Lux.jl",
                     ),
+                    MultiDocumenter.Link(
+                        "JuliaHub",
+                        "https://juliahub.com",
+                    ),
                 ],
             ),
             MultiDocumenter.Column(
