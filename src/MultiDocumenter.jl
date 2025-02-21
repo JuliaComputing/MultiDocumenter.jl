@@ -36,7 +36,7 @@ All `DropdownComponent`s go in [`Column`](@ref)s, which go in [`MegaDropdownNav`
 Any subtype of `DropdownComponent` must implement that `render` method.
 
 The main subtype is [`MultiDocRef`](@ref), which refers to external documentation
-and adds it to the search index.  However, there are others like [`ExternalLink`](@ref)
+and adds it to the search index.  However, there are others like [`Link`](@ref)
 which is used to link to external sites without making them searchable, and
 users can implement their own custom components.
 """
@@ -81,7 +81,11 @@ function MultiDocRef(;
     MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch)
 end
 
+"""
+    Link([text::String], link::String) <: DropdownComponent
 
+Represents a link to an external site.
+"""
 struct Link <: MultiDocumenter.DropdownComponent
     text::String
     link::String
