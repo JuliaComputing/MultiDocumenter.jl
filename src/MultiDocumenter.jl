@@ -43,7 +43,8 @@ users can implement their own custom components.
 abstract type DropdownComponent end
 
 """
-    struct MultiDocRef
+    struct MultiDocRef <: DropdownComponent
+    MultiDocRef(; upstream, name, path, giturl = "", branch = "gh-pages", fix_canonical_url = true)
 
 Represents one set of docs that will get an entry in the MultiDocumenter navigation.
 
