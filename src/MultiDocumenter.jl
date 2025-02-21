@@ -224,10 +224,10 @@ function make(
     end
     site_root_url = string(canonical_domain, rstrip(rootpath, '/'))
 
-    maybe_clone(flatten_multidocrefs(docs))
+    maybe_clone(flatten_dropdowncomponents(docs))
 
     dir = make_output_structure(
-        flatten_multidocrefs(docs),
+        flatten_dropdowncomponents(docs),
         prettyurls,
         hide_previews;
         canonical = site_root_url,
@@ -260,7 +260,7 @@ function make(
     if search_engine != false
         search_engine.engine.build_search_index(
             dir,
-            flatten_multidocrefs(docs),
+            flatten_dropdowncomponents(docs),
             search_engine,
             rootpath,
         )
@@ -280,7 +280,7 @@ function make(
     return outdir
 end
 
-function flatten_multidocrefs(docs::Vector)
+function flatten_dropdowncomponents(docs::Vector)
     out = DropdownComponent[]
     for doc in docs
         if doc isa DropdownComponent
@@ -340,7 +340,7 @@ function maybe_clone(docs::Vector)
 end
 
 function make_output_structure(
-    docs::Vector,
+    docs::Vector{DropdownComponent},
     prettyurls,
     hide_previews;
     canonical::Union{AbstractString,Nothing},
