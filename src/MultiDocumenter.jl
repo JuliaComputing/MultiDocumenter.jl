@@ -83,16 +83,18 @@ function MultiDocRef(;
 end
 
 """
-    Link([text::String], link::String) <: DropdownComponent
+    Link([text::String], link::String, [isexternal::Bool]) <: DropdownComponent
 
 Represents a link to an external site.
 """
 struct Link <: MultiDocumenter.DropdownComponent
     text::String
     link::String
+    isexternal::Bool
 end
 
 Link(link::String) = Link(link, link)
+Link(text::String, link::String) = Link(text, string, true #=isexternal=#) # TODO: add check / test
 
 struct DropdownNav
     name::String
