@@ -40,9 +40,8 @@ function render(c::Link, doc, thispage, prettyurls)
     # class nav-link nav-item makes the formatting correct
     # target="_blank" opens the link in a new tab
     # TODO: add "external link" icon after, either chain or arrow exiting box.
-    # TODO: allow internal links
     return @htl """
-    <a href=$(c.link) class="nav-link nav-item" target="_blank">$(c.text)</a>
+    <a href=$(c.link) class="nav-link nav-item" target=$(c.isexternal ? "_blank" : "_self")>$(c.text)</a>
     """
 end
 
