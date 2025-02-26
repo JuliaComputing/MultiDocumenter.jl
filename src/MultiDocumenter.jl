@@ -94,7 +94,7 @@ struct Link <: MultiDocumenter.DropdownComponent
 end
 
 Link(link::String) = Link(link, link)
-Link(text::String, link::String) = Link(text, link, contains(link, "//")  #=isexternal=#) # TODO: add check / test
+Link(text::String, link::String) = Link(text, link, contains(link, "//"))
 
 struct DropdownNav
     name::String
