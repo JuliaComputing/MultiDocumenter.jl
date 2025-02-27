@@ -26,7 +26,25 @@ Base.@kwdef mutable struct SearchConfig
 end
 
 """
-    struct MultiDocRef
+    abstract type DropdownComponent
+
+The supertype for any component that can be put in a dropdown column and 
+rendered using `MultiDocumenter.render(::YourComponent, thispagepath, dir, prettyurls)`.  
+
+All `DropdownComponent`s go in [`Column`](@ref)s, which go in [`MegaDropdownNav`](@ref).
+
+Any subtype of `DropdownComponent` must implement that `render` method.
+
+The main subtype is [`MultiDocRef`](@ref), which refers to external documentation
+and adds it to the search index.  However, there are others like [`Link`](@ref)
+which is used to link to external sites without making them searchable, and
+users can implement their own custom components.
+"""
+abstract type DropdownComponent end
+
+"""
+    struct MultiDocRef <: DropdownComponent
+    MultiDocRef(; upstream, name, path, giturl = "", branch = "gh-pages", fix_canonical_url = true)
 
 Represents one set of docs that will get an entry in the MultiDocumenter navigation.
 
@@ -44,7 +62,7 @@ Represents one set of docs that will get an entry in the MultiDocumenter navigat
 * `fix_canonical_url`: this can be set to `false` to disable the canonical URL fixing
   for this `MultiDocRef` (see also `canonical_domain` for [`make`](@ref)).
 """
-struct MultiDocRef
+struct MultiDocRef <: DropdownComponent
     upstream::String
     path::String
     name::Any
@@ -64,14 +82,28 @@ function MultiDocRef(;
     MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch)
 end
 
+"""
+    Link([text::String], link::String, [isexternal::Bool]) <: DropdownComponent
+
+Represents a link to an external site.
+"""
+struct Link <: MultiDocumenter.DropdownComponent
+    text::String
+    link::String
+    isexternal::Bool
+end
+
+Link(link::String) = Link(link, link)
+Link(text::String, link::String) = Link(text, link, contains(link, "//"))
+
 struct DropdownNav
     name::String
-    children::Vector{MultiDocRef}
+    children::Vector{DropdownComponent}
 end
 
 struct Column
     name::Any
-    children::Vector{MultiDocRef}
+    children::Vector{DropdownComponent}
 end
 
 struct MegaDropdownNav
@@ -84,8 +116,8 @@ struct BrandImage
     imagepath::String
 end
 
-function walk_outputs(f, root, docs::Vector{MultiDocRef}, dirs::Vector{String})
-    for ref in docs
+function walk_outputs(f, root, docs::Vector, dirs::Vector{String})
+    for ref in filter(x -> x isa MultiDocRef, docs)
         p = joinpath(root, ref.path)
         for dir in dirs
             dirpath = joinpath(p, dir)
@@ -199,10 +231,10 @@ function make(
     end
     site_root_url = string(canonical_domain, rstrip(rootpath, '/'))
 
-    maybe_clone(flatten_multidocrefs(docs))
+    maybe_clone(flatten_dropdowncomponents(docs))
 
     dir = make_output_structure(
-        flatten_multidocrefs(docs),
+        flatten_dropdowncomponents(docs),
         prettyurls,
         hide_previews;
         canonical = site_root_url,
@@ -235,7 +267,7 @@ function make(
     if search_engine != false
         search_engine.engine.build_search_index(
             dir,
-            flatten_multidocrefs(docs),
+            flatten_dropdowncomponents(docs),
             search_engine,
             rootpath,
         )
@@ -255,10 +287,10 @@ function make(
     return outdir
 end
 
-function flatten_multidocrefs(docs::Vector)
-    out = MultiDocRef[]
+function flatten_dropdowncomponents(docs::Vector)
+    out = DropdownComponent[]
     for doc in docs
-        if doc isa MultiDocRef
+        if doc isa DropdownComponent
             push!(out, doc)
         elseif doc isa MegaDropdownNav
             for col in doc.columns
@@ -272,11 +304,11 @@ function flatten_multidocrefs(docs::Vector)
             end
         end
     end
-    out
+    return out
 end
 
-function maybe_clone(docs::Vector{MultiDocRef})
-    for doc in docs
+function maybe_clone(docs::Vector)
+    for doc in filter(x -> x isa MultiDocRef, docs)
         if !isdir(doc.upstream)
             if isempty(doc.giturl)
                 error(
@@ -311,17 +343,18 @@ function maybe_clone(docs::Vector{MultiDocRef})
             end
         end
     end
+    return nothing
 end
 
 function make_output_structure(
-    docs::Vector{MultiDocRef},
+    docs::Vector{DropdownComponent},
     prettyurls,
     hide_previews;
     canonical::Union{AbstractString,Nothing},
 )
     dir = mktempdir()
 
-    for doc in docs
+    for doc in Iterators.filter(x -> x isa MultiDocRef, docs)
         outpath = joinpath(dir, doc.path)
 
         mkpath(dirname(outpath))
