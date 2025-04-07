@@ -25,12 +25,11 @@ jobs:
     env:
       PYTHON: ""
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v4
+      - uses: julia-actions/install-juliaup@v2
         with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: actions/cache@v1
+           channel: ${{matrix.channel}}
+      - uses: actions/cache@v4
         env:
           cache-name: cache-artifacts
         with:
