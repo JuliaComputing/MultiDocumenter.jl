@@ -109,6 +109,9 @@ html {
     line-height: 30px;
     padding: 5px 0;
 
+    max-height: calc(100vh - var(--navbar-height));
+    overflow: scroll;
+
     position: absolute;
     display: none;
 }
