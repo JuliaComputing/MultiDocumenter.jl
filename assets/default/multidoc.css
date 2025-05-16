@@ -245,11 +245,11 @@ html {
         margin: 1em;
     }
 
-    #documenter .docs-main header.docs-navbar.headroom--unpinned.headroom--not-top.headroom--not-bottom {
+    #documenter .docs-main header.docs-navbar.docs-navbar.docs-navbar.headroom--unpinned.headroom--not-top.headroom--not-bottom {
         top: -100vh;
     }
     
-    #documenter .docs-main header.docs-navbar {
+    #documenter .docs-main header.docs-navbar.docs-navbar.docs-navbar {
         top: var(--navbar-height);
     }
 }
