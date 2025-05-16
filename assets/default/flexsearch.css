@@ -20,7 +20,7 @@
     color: #999;
     background-color: unset;
     height: 28px;
-    font-family: Glober;
+    font-family: inherit;
     width: 20em;
     font-size: 14px;
     padding: 0 8px;
