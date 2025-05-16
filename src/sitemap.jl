@@ -21,6 +21,8 @@ function Base.showerror(io::IO, e::SitemapTooLargeError)
     println(io, "SitemapTooLargeError: $(e.msg)")
     println(io, " limit is $(e.limit), but sitemap has $(e.value)")
     print(io, SITEMAP_LIMIT_MSG)
+
+    return
 end
 function check_sitemap_size_limit(msg::AbstractString, value::Integer, limit::Integer)
     if value > limit
@@ -29,14 +31,15 @@ function check_sitemap_size_limit(msg::AbstractString, value::Integer, limit::In
         # Soft limits are 80% of the full limit
         @warn "Sitemap too large: $(msg) (> 80% soft limit)\n$(SITEMAP_LIMIT_MSG)"
     end
-    return nothing
+
+    return
 end
 
 function make_sitemap(;
-    sitemap_filename::AbstractString,
-    sitemap_root::AbstractString,
-    docs_root_directory::AbstractString,
-)
+        sitemap_filename::AbstractString,
+        sitemap_root::AbstractString,
+        docs_root_directory::AbstractString,
+    )
     # Determine the list of sitemap URLs by finding all canonical URLs
     sitemap_urls = find_sitemap_urls(; docs_root_directory, sitemap_root)
     if length(sitemap_urls) == 0
@@ -46,6 +49,8 @@ function make_sitemap(;
     sitemap_bytes = make_sitemap_bytes(sitemap_urls)
     # Write the actual sitemap.xml file into the output directory
     write(joinpath(docs_root_directory, sitemap_filename), sitemap_bytes)
+
+    return
 end
 
 function make_sitemap_bytes(sitemap_urls)::Vector{UInt8}
@@ -75,9 +80,9 @@ function make_sitemap_bytes(sitemap_urls)::Vector{UInt8}
 end
 
 function find_sitemap_urls(;
-    docs_root_directory::AbstractString,
-    sitemap_root::AbstractString,
-)
+        docs_root_directory::AbstractString,
+        sitemap_root::AbstractString,
+    )
     # On Windows, .relpath should have \ as path separators, which we have to
     # "normalize" to /-s for web
     canonical_urls = String[]

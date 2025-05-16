@@ -9,10 +9,12 @@ function inject_script!(custom_scripts, rootpath)
         custom_scripts,
         Docs.HTML("window.MULTIDOCUMENTER_ROOT_PATH = '$(rootpath)'"),
     )
+    return
 end
 
 function inject_styles!(custom_styles)
     pushfirst!(custom_styles, joinpath("assets", "default", "pagefind.css"))
+    return
 end
 
 function render()
@@ -27,9 +29,9 @@ function render()
 end
 
 function build_search_index(root, docs, config, rootpath)
-    if !success(Cmd(`$(npx) pagefind -V`; dir=root))
+    if !success(Cmd(`$(npx) pagefind -V`; dir = root))
         @info "Installing pagefind into $root."
-        if !success(Cmd(`$(npm) install pagefind`; dir=root))
+        if !success(Cmd(`$(npm) install pagefind`; dir = root))
             error("Could not install pagefind.")
         end
     end
@@ -37,6 +39,7 @@ function build_search_index(root, docs, config, rootpath)
     pattern = "*/{$(join(config.index_versions, ","))}/**/*.{html}"
 
     run(`$(npx) pagefind --site $(root) --glob $(pattern) --root-selector article`)
+    return
 end
 
 end

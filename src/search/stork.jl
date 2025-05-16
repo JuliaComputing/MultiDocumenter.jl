@@ -67,10 +67,12 @@ end
 function inject_script!(custom_scripts, _)
     pushfirst!(custom_scripts, joinpath("assets", "default", "stork.js"))
     pushfirst!(custom_scripts, joinpath("assets", "default", "stork_integration.js"))
+    return
 end
 
 function inject_styles!(custom_styles)
     pushfirst!(custom_styles, joinpath("assets", "default", "stork.css"))
+    return
 end
 
 function render()

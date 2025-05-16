@@ -23,12 +23,12 @@ open(joinpath(@__DIR__, "src", "index.md"), write = true) do io
         io,
         """
 
-## Docstrings
+        ## Docstrings
 
-```@autodocs
-Modules = [MultiDocumenter]
-```
-""",
+        ```@autodocs
+        Modules = [MultiDocumenter]
+        ```
+        """,
     )
 end
 cp(
