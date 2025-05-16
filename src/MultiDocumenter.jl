@@ -11,17 +11,17 @@ include("documentertools/canonical_urls.jl")
 end
 
 """
-    SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch, lowfi = false)
+    SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.PageFind, lowfi = false)
 
 `index_versions` is a vector of relative paths used for generating the search index. Only
 the first matching path is considered.
-`engine` may be `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`, or a module that conforms
-to the expected API (which is currently undocumented).
+`engine` may be `MultiDocumenter.PageFind`, `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`, 
+or a module that conforms to the expected API (which is currently undocumented).
 `lowfi = true` will try to minimize search index size. Only relevant for flexsearch.
 """
 Base.@kwdef mutable struct SearchConfig
     index_versions = ["stable", "dev"]
-    engine = FlexSearch
+    engine = PageFind
     lowfi = false
 end
 
@@ -131,12 +131,13 @@ function walk_outputs(f, root, docs::Vector, dirs::Vector{String})
 end
 
 include("renderers.jl")
+include("search/pagefind.jl")
 include("search/flexsearch.jl")
 include("search/stork.jl")
 include("canonical.jl")
 include("sitemap.jl")
 
-const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine = FlexSearch)
+const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine = PageFind)
 
 """
     make(
@@ -245,13 +246,6 @@ function make(
     end
     isdir(out_assets) || mkpath(out_assets)
     cp(joinpath(@__DIR__, "..", "assets", "default"), joinpath(out_assets, "default"))
-
-    if search_engine != false
-        if search_engine.engine == Stork && !Stork.has_stork()
-            @warn "stork binary not found. Falling back to flexsearch as search_engine."
-            search_engine = DEFAULT_ENGINE
-        end
-    end
 
     inject_styles_and_global_navigation(
         dir,

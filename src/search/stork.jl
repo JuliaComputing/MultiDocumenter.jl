@@ -15,6 +15,9 @@ function has_stork()
 end
 
 function build_search_index(root, docs, config, _)
+    if !has_stork()
+        error("Stork search engine not found. Aborting")
+    end
     config = make_stork_config(root, docs, config)
     config_path = joinpath(root, "stork.config.toml")
     index_path = joinpath(root, "stork.st")
