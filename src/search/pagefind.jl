@@ -29,7 +29,7 @@ function build_search_index(root, docs, config, rootpath)
 
     pattern = "*/{$(join(config.index_versions, ","))}/**/*.{html}"
 
-    run(`npx pagefind --site $(root) --glob $(pattern)`)
+    run(`npx pagefind --site $(root) --glob $(pattern) --root-selector article --exclude-selectors pre`)
 end
 
 end
