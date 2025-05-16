@@ -15,7 +15,7 @@ end
 
 `index_versions` is a vector of relative paths used for generating the search index. Only
 the first matching path is considered.
-`engine` may be `MultiDocumenter.PageFind`, `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`, 
+`engine` may be `MultiDocumenter.PageFind`, `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`,
 or a module that conforms to the expected API (which is currently undocumented).
 `lowfi = true` will try to minimize search index size. Only relevant for flexsearch.
 """
@@ -137,7 +137,7 @@ include("search/stork.jl")
 include("canonical.jl")
 include("sitemap.jl")
 
-const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine = PageFind)
+const DEFAULT_ENGINE = SearchConfig(; index_versions = ["stable", "dev"], engine = PageFind)
 
 """
     make(

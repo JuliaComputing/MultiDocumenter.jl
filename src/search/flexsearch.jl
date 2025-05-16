@@ -1,5 +1,6 @@
 module FlexSearch
-import Gumbo, JSON, AbstractTrees, NodeJS
+import Gumbo, JSON, AbstractTrees
+using NodeJS_22_jll: node
 using HypertextLiteral
 import ..walk_outputs
 
@@ -151,7 +152,7 @@ function build_search_index(root, docs, config, rootpath)
     file = config.lowfi ? "gensearch-lowfi.js" : "gensearch.js"
     println("Writing $(config.lowfi ? "lowfi" : "") flexsearch index:")
     cd(root) do
-        run(`$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`)
+        run(`$(node()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`)
     end
     return nothing
 end

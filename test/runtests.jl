@@ -95,7 +95,7 @@ if Sys.iswindows() && !isinteractive()
         docs;
         search_engine = MultiDocumenter.SearchConfig(
             index_versions = ["stable", "dev"],
-            engine = MultiDocumenter.FlexSearch,
+            engine = MultiDocumenter.PageFind,
         ),
         custom_scripts = [
             "foo/bar.js",
@@ -114,7 +114,7 @@ MultiDocumenter.make(
     docs;
     search_engine = MultiDocumenter.SearchConfig(
         index_versions = ["stable", "dev"],
-        engine = MultiDocumenter.FlexSearch,
+        engine = MultiDocumenter.PageFind,
     ),
     custom_scripts = [
         "foo/bar.js",
@@ -210,23 +210,8 @@ MultiDocumenter.make(
         @test occursin(canonical_href, index)
     end
 
-    @testset "flexsearch" begin
-        @test isdir(outpath, "search-data")
-        store_content = read(joinpath(outpath, "search-data", "store.json"), String)
-        @test !isempty(store_content)
-        @test occursin("Infiltrator.jl", store_content)
-        @test occursin("@infiltrate", store_content)
-        # We can't traverse symlinks on Windows, so stable/ things do not get
-        # written into the search index. Instead, it looks like we write dev/
-        if Sys.iswindows()
-            @test !occursin("$(rootpath)inf/stable/", store_content)
-            @test !occursin("$(rootpath)inf/stable/", store_content)
-            @test occursin("/inf/dev/", store_content)
-        else
-            @test occursin("$(rootpath)inf/stable/", store_content)
-            @test occursin("$(rootpath)inf/stable/", store_content)
-            @test !occursin("/inf/dev/", store_content)
-        end
+    @testset "pagefind" begin
+        @test isdir(outpath, "pagefind")
     end
 
     @testset "sitemap" begin

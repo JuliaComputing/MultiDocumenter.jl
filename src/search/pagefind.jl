@@ -1,10 +1,14 @@
 module PageFind
-using NodeJS: NodeJS
-using HypertextLiteral
+using NodeJS_22_jll: npx, npm
+using HypertextLiteral: @htl
 
 function inject_script!(custom_scripts, rootpath)
     pushfirst!(custom_scripts, joinpath("assets", "default", "pagefind_integration.js"))
     pushfirst!(custom_scripts, joinpath("pagefind", "pagefind.js"))
+    pushfirst!(
+        custom_scripts,
+        Docs.HTML("window.MULTIDOCUMENTER_ROOT_PATH = '$(rootpath)'"),
+    )
 end
 
 function inject_styles!(custom_styles)
@@ -23,13 +27,16 @@ function render()
 end
 
 function build_search_index(root, docs, config, rootpath)
-    if !success(`npx pagefind -V`)
-        error("pagefind search engine not found. Aborting. Try running `npm install pagefind --global`")
+    if !success(Cmd(`$(npx) pagefind -V`; dir=root))
+        @info "Installing pagefind into $root."
+        if !success(Cmd(`$(npm) install pagefind`; dir=root))
+            error("Could not install pagefind.")
+        end
     end
 
     pattern = "*/{$(join(config.index_versions, ","))}/**/*.{html}"
 
-    run(`npx pagefind --site $(root) --glob $(pattern) --root-selector article --exclude-selectors pre`)
+    run(`$(npx) pagefind --site $(root) --glob $(pattern) --root-selector article`)
 end
 
 end

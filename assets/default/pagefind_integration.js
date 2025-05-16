@@ -4,7 +4,7 @@
     let FOCUSABLE_ELEMENTS = []
     let FOCUSED_ELEMENT_INDEX = 0
 
-    const pagefind = await import("/pagefind/pagefind.js");
+    const pagefind = await import(window.MULTIDOCUMENTER_ROOT_PATH + "pagefind/pagefind.js")
 
     function initialize() {
         pagefind.init()
