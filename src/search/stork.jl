@@ -15,6 +15,9 @@ function has_stork()
 end
 
 function build_search_index(root, docs, config, _)
+    if !has_stork()
+        error("Stork search engine not found. Aborting")
+    end
     config = make_stork_config(root, docs, config)
     config_path = joinpath(root, "stork.config.toml")
     index_path = joinpath(root, "stork.st")
@@ -64,10 +67,12 @@ end
 function inject_script!(custom_scripts, _)
     pushfirst!(custom_scripts, joinpath("assets", "default", "stork.js"))
     pushfirst!(custom_scripts, joinpath("assets", "default", "stork_integration.js"))
+    return
 end
 
 function inject_styles!(custom_styles)
     pushfirst!(custom_styles, joinpath("assets", "default", "stork.css"))
+    return
 end
 
 function render()

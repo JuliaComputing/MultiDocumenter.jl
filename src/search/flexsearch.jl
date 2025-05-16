@@ -1,5 +1,6 @@
 module FlexSearch
-import Gumbo, JSON, AbstractTrees, NodeJS
+import Gumbo, JSON, AbstractTrees
+using NodeJS_22_jll: node
 using HypertextLiteral
 import ..walk_outputs
 
@@ -8,7 +9,7 @@ const ID = Ref(0)
 mutable struct Fragment
     id::Int
     title::String
-    ref::Union{String,Nothing}
+    ref::Union{String, Nothing}
     content::String
 end
 
@@ -31,12 +32,12 @@ SearchIndex() = SearchIndex([])
 
 is_section_start(el) =
     Gumbo.hasattr(el, "id") && (
-        Gumbo.tag(el) in (:h1, :h2, :h3, :h4, :h5, :h6, :h7, :h8) || (
-            Gumbo.tag(el) == :a &&
+    Gumbo.tag(el) in (:h1, :h2, :h3, :h4, :h5, :h6, :h7, :h8) || (
+        Gumbo.tag(el) == :a &&
             Gumbo.hasattr(el, "href") &&
             Gumbo.getattr(el, "class", "") == "docstring-binding"
-        )
     )
+)
 
 function add_fragment(doc, el)
     ref = nothing
@@ -61,6 +62,7 @@ function add_fragment(doc, el)
             current.content = string(current.content, ' ', Gumbo.text(e))
         end
     end
+    return
 end
 
 function add_to_index!(index, ref, file)
@@ -82,6 +84,7 @@ function add_to_index!(index, ref, file)
         end
     end
     push!(index.documents, doc)
+    return
 end
 
 function generate_index(root, docs, config, rootpath)
@@ -101,10 +104,12 @@ function inject_script!(custom_scripts, rootpath)
         custom_scripts,
         Docs.HTML("window.MULTIDOCUMENTER_ROOT_PATH = '$(rootpath)'"),
     )
+    return
 end
 
 function inject_styles!(custom_styles)
     pushfirst!(custom_styles, joinpath("assets", "default", "flexsearch.css"))
+    return
 end
 
 function render()
@@ -142,6 +147,7 @@ function to_json_index(index::SearchIndex, file)
         end
         JSON.end_array(writer)
     end
+    return
 end
 
 function build_search_index(root, docs, config, rootpath)
@@ -151,8 +157,8 @@ function build_search_index(root, docs, config, rootpath)
     file = config.lowfi ? "gensearch-lowfi.js" : "gensearch.js"
     println("Writing $(config.lowfi ? "lowfi" : "") flexsearch index:")
     cd(root) do
-        run(`$(NodeJS.nodejs_cmd()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`)
+        run(`$(node()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`)
     end
-    return nothing
+    return
 end
 end
