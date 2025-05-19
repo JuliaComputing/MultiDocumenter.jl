@@ -6,9 +6,9 @@ function fix_canonical_url!(
         root_dir::AbstractString,
     )
     # If the user didn't set `canonical`, then we don't need to do anything
-    isnothing(canonical) && return
+    isnothing(canonical) && return nothing
     # The user can also disable the canonical URL fixing on a per-package basis
-    doc.fix_canonical_url || return
+    doc.fix_canonical_url || return nothing
     # Determine the canonical URL and fix them in the HTML files
     documenter_directory_root = joinpath(root_dir, doc.path)
     try
@@ -21,5 +21,5 @@ function fix_canonical_url!(
             (e, catch_backtrace())
     end
 
-    return
+    return nothing
 end

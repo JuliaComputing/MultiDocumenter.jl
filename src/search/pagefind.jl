@@ -9,12 +9,12 @@ function inject_script!(custom_scripts, rootpath)
         custom_scripts,
         Docs.HTML("window.MULTIDOCUMENTER_ROOT_PATH = '$(rootpath)'"),
     )
-    return
+    return nothing
 end
 
 function inject_styles!(custom_styles)
     pushfirst!(custom_styles, joinpath("assets", "default", "pagefind.css"))
-    return
+    return nothing
 end
 
 function render()
@@ -39,7 +39,7 @@ function build_search_index(root, docs, config, rootpath)
     pattern = "*/{$(join(config.index_versions, ","))}/**/*.{html}"
 
     run(`$(npx) pagefind --site $(root) --glob $(pattern) --root-selector article`)
-    return
+    return nothing
 end
 
 end

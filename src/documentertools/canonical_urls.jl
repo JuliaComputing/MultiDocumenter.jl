@@ -66,7 +66,7 @@ function update_canonical_links_for_version(
             @error "Multiple canonical tags!" file = fileinfo.relpath
         end
     end
-    return
+    return nothing
 end
 
 is_canonical_element(e) =
@@ -124,7 +124,7 @@ function update_canonical_links(docs_directory::AbstractString; canonical::Abstr
         @debug "Updating canonical URLs for a version" path canonical_full_root
         update_canonical_links_for_version(path; canonical = canonical_full_root)
     end
-    return
+    return nothing
 end
 
 function canonical_directory_from_redirect_index_html(docs_directory::AbstractString)
@@ -241,7 +241,8 @@ function extract_versions_list(versions_js::AbstractString)
             ArgumentError(
                 """
                 Could not find DOC_VERSIONS in $(versions_js):
-                $(versions_js_content)"""
+                $(versions_js_content)
+                """
             )
         )
     end
@@ -252,7 +253,8 @@ function extract_versions_list(versions_js::AbstractString)
             ArgumentError(
                 """
                 DOC_VERSIONS empty in $(versions_js):
-                $(versions_js_content)"""
+                $(versions_js_content)
+                """
             )
         )
     end

@@ -28,8 +28,8 @@ end
 """
     abstract type DropdownComponent
 
-The supertype for any component that can be put in a dropdown column and 
-rendered using `MultiDocumenter.render(::YourComponent, thispagepath, dir, prettyurls)`.  
+The supertype for any component that can be put in a dropdown column and
+rendered using `MultiDocumenter.render(::YourComponent, thispagepath, dir, prettyurls)`.
 
 All `DropdownComponent`s go in [`Column`](@ref)s, which go in [`MegaDropdownNav`](@ref).
 
@@ -128,7 +128,7 @@ function walk_outputs(f, root, docs::Vector, dirs::Vector{String})
             break
         end
     end
-    return
+    return nothing
 end
 
 include("renderers.jl")
@@ -342,7 +342,7 @@ function maybe_clone(docs::Vector)
             end
         end
     end
-    return
+    return nothing
 end
 
 function make_output_structure(
@@ -553,7 +553,7 @@ function inject_styles_and_global_navigation(
         end
     end
 
-    return
+    return nothing
 end
 
 end

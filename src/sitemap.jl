@@ -22,7 +22,7 @@ function Base.showerror(io::IO, e::SitemapTooLargeError)
     println(io, " limit is $(e.limit), but sitemap has $(e.value)")
     print(io, SITEMAP_LIMIT_MSG)
 
-    return
+    return nothing
 end
 function check_sitemap_size_limit(msg::AbstractString, value::Integer, limit::Integer)
     if value > limit
@@ -32,7 +32,7 @@ function check_sitemap_size_limit(msg::AbstractString, value::Integer, limit::In
         @warn "Sitemap too large: $(msg) (> 80% soft limit)\n$(SITEMAP_LIMIT_MSG)"
     end
 
-    return
+    return nothing
 end
 
 function make_sitemap(;
@@ -44,13 +44,13 @@ function make_sitemap(;
     sitemap_urls = find_sitemap_urls(; docs_root_directory, sitemap_root)
     if length(sitemap_urls) == 0
         @error "No sitemap URLs found"
-        return
+        return nothing
     end
     sitemap_bytes = make_sitemap_bytes(sitemap_urls)
     # Write the actual sitemap.xml file into the output directory
     write(joinpath(docs_root_directory, sitemap_filename), sitemap_bytes)
 
-    return
+    return nothing
 end
 
 function make_sitemap_bytes(sitemap_urls)::Vector{UInt8}
@@ -96,13 +96,13 @@ function find_sitemap_urls(;
             if DocumenterTools.get_meta_redirect_url(html) === nothing
                 @warn "Canonical URL missing: $(fileinfo.relpath)"
             end
-            return
+            return nothing
         end
         # Check that the canonincal URL is correct.
         # First, we check that the root part is actually what we expect it to be.
         if !startswith(canonical_href, sitemap_root)
             @warn "Invalid canonical URL, excluded from sitemap." canonical_href fileinfo.fullpath
-            return
+            return nothing
         end
         # Let's make sure we're not adding duplicates, but first we must normalize the URL
         canonical_href = normalize_canonical_url(canonical_href)

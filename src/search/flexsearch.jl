@@ -1,7 +1,11 @@
 module FlexSearch
-import Gumbo, JSON, AbstractTrees
+
+using Gumbo: Gumbo
+using JSON: JSON
+using AbstractTrees: AbstractTrees
 using NodeJS_22_jll: node
-using HypertextLiteral
+using HypertextLiteral: @htl
+
 import ..walk_outputs
 
 const ID = Ref(0)
@@ -62,7 +66,7 @@ function add_fragment(doc, el)
             current.content = string(current.content, ' ', Gumbo.text(e))
         end
     end
-    return
+    return nothing
 end
 
 function add_to_index!(index, ref, file)
@@ -84,7 +88,7 @@ function add_to_index!(index, ref, file)
         end
     end
     push!(index.documents, doc)
-    return
+    return nothing
 end
 
 function generate_index(root, docs, config, rootpath)
@@ -104,12 +108,12 @@ function inject_script!(custom_scripts, rootpath)
         custom_scripts,
         Docs.HTML("window.MULTIDOCUMENTER_ROOT_PATH = '$(rootpath)'"),
     )
-    return
+    return nothing
 end
 
 function inject_styles!(custom_styles)
     pushfirst!(custom_styles, joinpath("assets", "default", "flexsearch.css"))
-    return
+    return nothing
 end
 
 function render()
@@ -147,7 +151,7 @@ function to_json_index(index::SearchIndex, file)
         end
         JSON.end_array(writer)
     end
-    return
+    return nothing
 end
 
 function build_search_index(root, docs, config, rootpath)
@@ -159,6 +163,6 @@ function build_search_index(root, docs, config, rootpath)
     cd(root) do
         run(`$(node()) $(joinpath(@__DIR__, "..", "..", "flexsearch", file))`)
     end
-    return
+    return nothing
 end
 end
