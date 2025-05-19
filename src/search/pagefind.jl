@@ -29,22 +29,28 @@ function render()
 end
 
 function build_search_index(root, docs, config, rootpath)
-    # npx and npm are distributed as FileProducts, 
+    # npx and npm are distributed as FileProducts,
     # so the JLL does not bundle environment information into them.
     # To fix this, we wrap all uses of npx and npm inside `node() do ...`
     # which will automatically adjust the necessary environment variables.
-    node() do 
+    node() do _
         if !success(Cmd(`$(npx) pagefind -V`; dir = root))
             @info "Installing pagefind into $root."
             if !success(Cmd(`$(npm) install pagefind`; dir = root))
                 error("Could not install pagefind.")
             end
         end
-    
+
         pattern = "*/{$(join(config.index_versions, ","))}/**/*.{html}"
-    
-        run(`$(npx) pagefind --site $(root) --glob $(pattern) --root-selector article`)
+
+        out_path = joinpath(root, "pagefind")
+        mktempdir() do dir
+            # pagefind doesn't look at symlinks, so we resolve them here:
+            cp(root, dir; follow_symlinks = true, force = true)
+            run(`$(npx) pagefind --site $(dir) --output-path $(out_path) --glob $(pattern) --root-selector article`)
+        end
     end
+
     return nothing
 end
 
