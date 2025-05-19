@@ -1,7 +1,7 @@
 name = "MultiDocumenter"
 uuid = "87ed4bf0-c935-4a67-83c3-2a03bee4197c"
 authors = ["Sebastian Pfitzner <pfitzseb@gmail.com> and contributors"]
-version = "0.7.1"
+version = "0.8.0"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
