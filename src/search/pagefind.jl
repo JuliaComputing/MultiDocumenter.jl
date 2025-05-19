@@ -38,7 +38,13 @@ function build_search_index(root, docs, config, rootpath)
 
     pattern = "*/{$(join(config.index_versions, ","))}/**/*.{html}"
 
-    run(`$(npx) pagefind --site $(root) --glob $(pattern) --root-selector article`)
+    out_path = joinpath(root, "pagefind")
+    mktempdir() do dir
+        # pagefind doesn't look at symlinks, so we resolve them here:
+        cp(root, dir; follow_symlinks = true, force = true)
+        run(`$(npx) pagefind --site $(dir) --output-path $(out_path) --glob $(pattern) --root-selector article`)
+    end
+
     return nothing
 end
 
