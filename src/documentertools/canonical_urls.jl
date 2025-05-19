@@ -16,9 +16,9 @@
   specifying the root of the canonical URL.
 """
 function update_canonical_links_for_version(
-    docs_directory::AbstractString;
-    canonical::AbstractString,
-)
+        docs_directory::AbstractString;
+        canonical::AbstractString,
+    )
     canonical = rstrip(canonical, '/')
 
     walkdocs(docs_directory, isdochtml) do fileinfo
@@ -26,7 +26,7 @@ function update_canonical_links_for_version(
         # Determine the
         filepath = splitpath(fileinfo.relpath)
         new_canonical_href = if filepath[end] == "index.html"
-            joinurl(canonical, filepath[1:end-1]...) * '/'
+            joinurl(canonical, filepath[1:(end - 1)]...) * '/'
         else
             joinurl(canonical, filepath[1:end]...)
         end
@@ -66,6 +66,7 @@ function update_canonical_links_for_version(
             @error "Multiple canonical tags!" file = fileinfo.relpath
         end
     end
+    return nothing
 end
 
 is_canonical_element(e) =
@@ -123,6 +124,7 @@ function update_canonical_links(docs_directory::AbstractString; canonical::Abstr
         @debug "Updating canonical URLs for a version" path canonical_full_root
         update_canonical_links_for_version(path; canonical = canonical_full_root)
     end
+    return nothing
 end
 
 function canonical_directory_from_redirect_index_html(docs_directory::AbstractString)
@@ -130,7 +132,7 @@ function canonical_directory_from_redirect_index_html(docs_directory::AbstractSt
     isfile(redirect_index_html_path) || return nothing
     redirect_url = get_meta_redirect_url(redirect_index_html_path)
     isnothing(redirect_url) && return nothing
-    splitpath(normpath(redirect_url))
+    return splitpath(normpath(redirect_url))
 end
 
 """
@@ -235,16 +237,26 @@ function extract_versions_list(versions_js::AbstractString)
     versions_js_content = read(versions_js, String)
     m = match(r"var\s+DOC_VERSIONS\s*=\s*\[([0-9A-Za-z\"\s.,+-]+)\]", versions_js_content)
     if isnothing(m)
-        throw(ArgumentError("""
-        Could not find DOC_VERSIONS in $(versions_js):
-        $(versions_js_content)"""))
+        throw(
+            ArgumentError(
+                """
+                Could not find DOC_VERSIONS in $(versions_js):
+                $(versions_js_content)
+                """
+            )
+        )
     end
     versions = strip.(c -> isspace(c) || (c == '"'), split(m[1], ","))
     filter!(!isempty, versions)
     if isempty(versions)
-        throw(ArgumentError("""
-        DOC_VERSIONS empty in $(versions_js):
-        $(versions_js_content)"""))
+        throw(
+            ArgumentError(
+                """
+                DOC_VERSIONS empty in $(versions_js):
+                $(versions_js_content)
+                """
+            )
+        )
     end
     return versions
 end

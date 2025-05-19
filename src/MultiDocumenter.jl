@@ -5,31 +5,31 @@ using HypertextLiteral
 import Git: git
 
 module DocumenterTools
-import Gumbo, AbstractTrees
-include("documentertools/walkdocs.jl")
-include("documentertools/canonical_urls.jl")
+    import Gumbo, AbstractTrees
+    include("documentertools/walkdocs.jl")
+    include("documentertools/canonical_urls.jl")
 end
 
 """
-    SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.FlexSearch, lowfi = false)
+    SearchConfig(index_versions = ["stable"], engine = MultiDocumenter.PageFind, lowfi = false)
 
 `index_versions` is a vector of relative paths used for generating the search index. Only
 the first matching path is considered.
-`engine` may be `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`, or a module that conforms
-to the expected API (which is currently undocumented).
+`engine` may be `MultiDocumenter.PageFind`, `MultiDocumenter.FlexSearch`, `MultiDocumenter.Stork`,
+or a module that conforms to the expected API (which is currently undocumented).
 `lowfi = true` will try to minimize search index size. Only relevant for flexsearch.
 """
 Base.@kwdef mutable struct SearchConfig
     index_versions = ["stable", "dev"]
-    engine = FlexSearch
+    engine = PageFind
     lowfi = false
 end
 
 """
     abstract type DropdownComponent
 
-The supertype for any component that can be put in a dropdown column and 
-rendered using `MultiDocumenter.render(::YourComponent, thispagepath, dir, prettyurls)`.  
+The supertype for any component that can be put in a dropdown column and
+rendered using `MultiDocumenter.render(::YourComponent, thispagepath, dir, prettyurls)`.
 
 All `DropdownComponent`s go in [`Column`](@ref)s, which go in [`MegaDropdownNav`](@ref).
 
@@ -72,14 +72,14 @@ struct MultiDocRef <: DropdownComponent
 end
 
 function MultiDocRef(;
-    upstream,
-    name,
-    path,
-    giturl = "",
-    branch = "gh-pages",
-    fix_canonical_url = true,
-)
-    MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch)
+        upstream,
+        name,
+        path,
+        giturl = "",
+        branch = "gh-pages",
+        fix_canonical_url = true,
+    )
+    return MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch)
 end
 
 """
@@ -128,15 +128,17 @@ function walk_outputs(f, root, docs::Vector, dirs::Vector{String})
             break
         end
     end
+    return nothing
 end
 
 include("renderers.jl")
+include("search/pagefind.jl")
 include("search/flexsearch.jl")
 include("search/stork.jl")
 include("canonical.jl")
 include("sitemap.jl")
 
-const DEFAULT_ENGINE = SearchConfig(index_versions = ["stable", "dev"], engine = FlexSearch)
+const DEFAULT_ENGINE = SearchConfig(; index_versions = ["stable", "dev"], engine = PageFind)
 
 """
     make(
@@ -174,22 +176,22 @@ Aggregates multiple Documenter.jl-based documentation pages `docs` into `outdir`
 - `sitemap_filename` can be used to override the default sitemap filename (`sitemap.xml`)
 """
 function make(
-    outdir,
-    docs::Vector;
-    assets_dir = nothing,
-    brand_image::Union{Nothing,BrandImage} = nothing,
-    custom_stylesheets = [],
-    custom_scripts = [],
-    search_engine = DEFAULT_ENGINE,
-    prettyurls = true,
-    rootpath = "/",
-    hide_previews = true,
-    canonical_domain::Union{AbstractString,Nothing} = nothing,
-    sitemap::Bool = false,
-    sitemap_filename::AbstractString = "sitemap.xml",
-    # This keyword is for internal test use only:
-    _override_windows_isinteractive_check::Bool = false,
-)
+        outdir,
+        docs::Vector;
+        assets_dir = nothing,
+        brand_image::Union{Nothing, BrandImage} = nothing,
+        custom_stylesheets = [],
+        custom_scripts = [],
+        search_engine = DEFAULT_ENGINE,
+        prettyurls = true,
+        rootpath = "/",
+        hide_previews = true,
+        canonical_domain::Union{AbstractString, Nothing} = nothing,
+        sitemap::Bool = false,
+        sitemap_filename::AbstractString = "sitemap.xml",
+        # This keyword is for internal test use only:
+        _override_windows_isinteractive_check::Bool = false,
+    )
     if Sys.iswindows() && !isinteractive()
         if _override_windows_isinteractive_check || isinteractive()
             @warn """
@@ -213,9 +215,13 @@ function make(
     else
         !isnothing(canonical_domain)
         if !startswith(canonical_domain, r"^https?://")
-            throw(ArgumentError("""
-            Invalid value for canonical_domain: $(canonical_domain)
-            Must start with http:// or https://"""))
+            throw(
+                ArgumentError(
+                    """
+                    Invalid value for canonical_domain: $(canonical_domain)
+                    Must start with http:// or https://"""
+                )
+            )
         end
         # We'll strip any trailing /-s though, in case the user passed something like
         # https://example.org/, because we want to concatenate the file paths with `/`
@@ -245,13 +251,6 @@ function make(
     end
     isdir(out_assets) || mkpath(out_assets)
     cp(joinpath(@__DIR__, "..", "assets", "default"), joinpath(out_assets, "default"))
-
-    if search_engine != false
-        if search_engine.engine == Stork && !Stork.has_stork()
-            @warn "stork binary not found. Falling back to flexsearch as search_engine."
-            search_engine = DEFAULT_ENGINE
-        end
-    end
 
     inject_styles_and_global_navigation(
         dir,
@@ -347,11 +346,11 @@ function maybe_clone(docs::Vector)
 end
 
 function make_output_structure(
-    docs::Vector{DropdownComponent},
-    prettyurls,
-    hide_previews;
-    canonical::Union{AbstractString,Nothing},
-)
+        docs::Vector{DropdownComponent},
+        prettyurls,
+        hide_previews;
+        canonical::Union{AbstractString, Nothing},
+    )
     dir = mktempdir()
 
     for doc in Iterators.filter(x -> x isa MultiDocRef, docs)
@@ -387,13 +386,13 @@ function make_output_structure(
 end
 
 function make_global_nav(
-    dir,
-    docs::Vector,
-    thispagepath,
-    brand_image,
-    search_engine,
-    prettyurls,
-)
+        dir,
+        docs::Vector,
+        thispagepath,
+        brand_image,
+        search_engine,
+        prettyurls,
+    )
     nav = @htl """
     <nav id="multi-page-nav">
         $(render(brand_image, dir, thispagepath))
@@ -470,15 +469,15 @@ end
 
 
 function inject_styles_and_global_navigation(
-    dir,
-    docs::Vector,
-    brand_image,
-    custom_stylesheets,
-    custom_scripts,
-    search_engine,
-    prettyurls,
-    rootpath,
-)
+        dir,
+        docs::Vector,
+        brand_image,
+        custom_stylesheets,
+        custom_scripts,
+        search_engine,
+        prettyurls,
+        rootpath,
+    )
 
     if search_engine != false
         search_engine.engine.inject_script!(custom_scripts, rootpath)
@@ -497,9 +496,9 @@ function inject_styles_and_global_navigation(
             isfile(path) || continue
             page = read(path, String)
             if startswith(
-                page,
-                "<!--This file is automatically generated by Documenter.jl-->",
-            )
+                    page,
+                    "<!--This file is automatically generated by Documenter.jl-->",
+                )
                 continue
             end
 
@@ -527,7 +526,7 @@ function inject_styles_and_global_navigation(
                         elseif Gumbo.tag(el) == :body && !isempty(el.children)
                             documenter_div = first(el.children)
                             if documenter_div isa Gumbo.HTMLElement &&
-                               Gumbo.getattr(documenter_div, "id", "") == "documenter"
+                                    Gumbo.getattr(documenter_div, "id", "") == "documenter"
                                 @debug "Could not detect Documenter page layout in $path. This may be due to an old version of Documenter."
                             end
                             # inject global navigation as first element in body
@@ -553,6 +552,8 @@ function inject_styles_and_global_navigation(
             end
         end
     end
+
+    return nothing
 end
 
 end
