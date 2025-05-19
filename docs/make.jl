@@ -124,7 +124,7 @@ MultiDocumenter.make(
     docs;
     search_engine = MultiDocumenter.SearchConfig(
         index_versions = ["stable"],
-        engine = MultiDocumenter.FlexSearch,
+        engine = MultiDocumenter.PageFind,
     ),
     rootpath = "/MultiDocumenter.jl/",
     canonical_domain = "https://juliacomputing.github.io/",
