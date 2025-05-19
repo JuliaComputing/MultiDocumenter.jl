@@ -33,7 +33,7 @@ function build_search_index(root, docs, config, rootpath)
     # so the JLL does not bundle environment information into them.
     # To fix this, we wrap all uses of npx and npm inside `node() do ...`
     # which will automatically adjust the necessary environment variables.
-    node() do
+    node() do _
         if !success(Cmd(`$(npx) pagefind -V`; dir = root))
             @info "Installing pagefind into $root."
             if !success(Cmd(`$(npm) install pagefind`; dir = root))
