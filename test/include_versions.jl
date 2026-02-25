@@ -3,8 +3,8 @@ using MultiDocumenter
 
 @testset "include_versions" begin
     @testset "giturl_to_ghpages_url" begin
-        @test MultiDocumenter.giturl_to_ghpages_url("https://github.com/NREL-Sienna/PowerSystems.jl.git") ==
-            "https://nrel-sienna.github.io/PowerSystems.jl/"
+        @test MultiDocumenter.giturl_to_ghpages_url("https://github.com/JuliaDocs/Documenter.jl.git") ==
+            "https://juliadocs.github.io/Documenter.jl/"
         @test MultiDocumenter.giturl_to_ghpages_url("https://github.com/JuliaDebug/Infiltrator.jl.git") ==
             "https://juliadebug.github.io/Infiltrator.jl/"
         @test MultiDocumenter.giturl_to_ghpages_url("https://github.com/avik-pal/Lux.jl") ==
