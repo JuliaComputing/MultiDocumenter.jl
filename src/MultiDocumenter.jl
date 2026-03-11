@@ -44,7 +44,7 @@ abstract type DropdownComponent end
 
 """
     struct MultiDocRef <: DropdownComponent
-    MultiDocRef(; upstream, name, path, giturl = "", branch = "gh-pages", fix_canonical_url = true)
+    MultiDocRef(; upstream, name, path, giturl = "", branch = "gh-pages", fix_canonical_url = true, include_versions = nothing, all_versions_url = nothing)
 
 Represents one set of docs that will get an entry in the MultiDocumenter navigation.
 
@@ -61,6 +61,13 @@ Represents one set of docs that will get an entry in the MultiDocumenter navigat
 * `branch`: Git branch of `giturl` where the docs will be pulled from (defaults to `gh-pages`)
 * `fix_canonical_url`: this can be set to `false` to disable the canonical URL fixing
   for this `MultiDocRef` (see also `canonical_domain` for [`make`](@ref)).
+* `include_versions`: if set (e.g. `["stable", "dev", "latest"]`), only these version directories are copied
+  from upstream, reducing aggregate site size. Root files (e.g. `index.html`, `versions.js`) are always copied.
+  When set, `versions.js` is rewritten to list only these versions and an "All versions" link is added to the
+  version selector pointing to `all_versions_url`.
+* `all_versions_url`: URL for the "All versions" link in the version selector when `include_versions` is set.
+  If unset and `giturl` is set, derived from `giturl` (e.g. `https://github.com/org/pkg.jl.git` →
+  `https://org.github.io/pkg.jl/`).
 """
 struct MultiDocRef <: DropdownComponent
     upstream::String
@@ -69,6 +76,8 @@ struct MultiDocRef <: DropdownComponent
     fix_canonical_url::Bool
     giturl::String
     branch::String
+    include_versions::Union{Vector{String}, Nothing}
+    all_versions_url::Union{String, Nothing}
 end
 
 function MultiDocRef(;
@@ -78,8 +87,10 @@ function MultiDocRef(;
         giturl = "",
         branch = "gh-pages",
         fix_canonical_url = true,
+        include_versions = nothing,
+        all_versions_url = nothing,
     )
-    return MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch)
+    return MultiDocRef(upstream, path, name, fix_canonical_url, giturl, branch, include_versions, all_versions_url)
 end
 
 """
@@ -345,6 +356,90 @@ function maybe_clone(docs::Vector)
     return nothing
 end
 
+# --- include_versions: copy only selected version dirs and add "All versions" link ---
+
+"""Derive GitHub Pages URL from git clone URL (e.g. https://github.com/org/pkg.jl.git → https://org.github.io/pkg.jl/)."""
+function giturl_to_ghpages_url(giturl::AbstractString)
+    m = match(r"github\.com[/:]([^/]+)/([^/#?]+?)(\.git)?$", giturl)
+    isnothing(m) && return ""
+    org, repo = lowercase(m[1]), m[2]
+    endswith(lowercase(repo), ".jl") || (repo = repo * ".jl")
+    return "https://$(org).github.io/$(repo)/"
+end
+
+function _all_versions_url(doc::MultiDocRef)
+    if doc.all_versions_url !== nothing && !isempty(doc.all_versions_url)
+        return doc.all_versions_url
+    end
+    return isempty(doc.giturl) ? "" : giturl_to_ghpages_url(doc.giturl)
+end
+
+"""Copy only root files and listed version dirs from src to dst. Skips .git and version dirs not in versions.
+When a version dir is a symlink (e.g. stable -> v5.5.0), copies the target content so the result is self-contained."""
+function cp_select_versions(src::String, dst::String, versions::Vector{String})
+    mkpath(dst)
+    verset = Set(versions)
+    for entry in readdir(src)
+        entry == ".git" && continue
+        full = joinpath(src, entry)
+        if isfile(full)
+            cp(full, joinpath(dst, entry); force = true)
+        elseif (isdir(full) || islink(full)) && entry in verset
+            # follow_symlinks=true so e.g. stable -> v5.5.0 copies actual content into dst/stable
+            cp(full, joinpath(dst, entry); force = true, follow_symlinks = true)
+        end
+    end
+    return nothing
+end
+
+"""Rewrite versions.js to list only kept_versions (so the version selector only shows those)."""
+function rewrite_versions_js(outpath::String, kept_versions::Vector{String})
+    vjs = joinpath(outpath, "versions.js")
+    isfile(vjs) || return nothing
+    content = read(vjs, String)
+    new_list = "[\n    \"" * join(kept_versions, "\",\n    \"") * "\"\n];"
+    new_content = replace(content, r"var\s+DOC_VERSIONS\s*=\s*\[[\s\S]*?\]" => "var DOC_VERSIONS = " * new_list)
+    write(vjs, new_content)
+    return nothing
+end
+
+"""Inject a 'See All Versions' option into the Documenter version selector dropdown that opens the all_versions_url (must be absolute, e.g. package gh-pages from giturl).
+When the script is already present (e.g. from cloned HTML), replace the URL inside it with the current all_versions_url."""
+function inject_all_versions_link(html_path::String, all_versions_url::String)
+    isempty(all_versions_url) && return false
+    # Require absolute URL so the link goes to the package site, not the aggregate
+    startswith(all_versions_url, "http://") || startswith(all_versions_url, "https://") || return false
+    content = read(html_path, String)
+    esc_url = replace(all_versions_url, "\\" => "\\\\", "\"" => "\\\"")
+    if occursin("documenter-see-all-versions-option", content)
+        # Script already present (e.g. cloned docs from old org); replace URL so link is correct
+        new_content = replace(content, r"var url=\"[^\"]*\"" => "var url=\"" * esc_url * "\""; count = 1)
+        if new_content != content
+            write(html_path, new_content)
+            return true
+        end
+        return false
+    end
+    # Run after DOM ready. Add "See All Versions" to every version select (sidebar + navbar). Use one capture-phase listener on document so we handle any version select; stop propagation when "See All Versions" is chosen so Documenter does not navigate the current tab.
+    snippet = """<script>(function(){/* documenter-see-all-versions-option */function run(){var url="$(esc_url)";var sels=document.querySelectorAll('.docs-version-selector select,#documenter-version-selector');for(var i=0;i<sels.length;i++){var sel=sels[i];var n=sel.options.length;if(n&&sel.options[n-1].value===url)continue;sel.dataset.seeAllPrevIdx=sel.selectedIndex;var opt=document.createElement('option');opt.textContent='See All Versions';opt.value=url;sel.appendChild(opt);}var resetting=false;document.addEventListener('change',function(e){if(resetting)return;var sel=e.target;if(sel.tagName!=='SELECT')return;if(!sel.closest('.docs-version-selector')&&sel.id!=='documenter-version-selector')return;if(sel.value===url){e.preventDefault();e.stopImmediatePropagation();resetting=true;window.open(url,'_blank');var prevIdx=parseInt(sel.dataset.seeAllPrevIdx,10);if(isNaN(prevIdx))prevIdx=0;var m=sel.options.length-1;var idx=prevIdx>=0&&prevIdx<m?prevIdx:0;for(var j=0;j<sels.length;j++){sels[j].selectedIndex=idx;sels[j].dataset.seeAllPrevIdx=idx;}sel.dispatchEvent(new Event('change',{bubbles:true}));resetting=false;}else{sel.dataset.seeAllPrevIdx=sel.selectedIndex;}},true);}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',run);}else{run();}})();</script>"""
+    if !occursin("</body>", content)
+        return false
+    end
+    new_content = replace(content, "</body>" => snippet * "\n</body>"; count = 1)
+    write(html_path, new_content)
+    return true
+end
+
+function _apply_include_versions(doc::MultiDocRef, outpath::String, versions::Vector{String})
+    rewrite_versions_js(outpath, versions)
+    url = _all_versions_url(doc)
+    isempty(url) && return nothing
+    DocumenterTools.walkdocs(outpath, DocumenterTools.isdochtml) do fileinfo
+        inject_all_versions_link(fileinfo.fullpath, url)
+    end
+    return nothing
+end
+
 function make_output_structure(
         docs::Vector{DropdownComponent},
         prettyurls,
@@ -357,7 +452,17 @@ function make_output_structure(
         outpath = joinpath(dir, doc.path)
 
         mkpath(dirname(outpath))
-        cp(doc.upstream, outpath; force = true)
+        if doc.include_versions !== nothing && !isempty(doc.include_versions)
+            cp_select_versions(doc.upstream, outpath, doc.include_versions)
+            # Overwrite root index.html so we never serve the clone's redirect (e.g. to old org URL).
+            first_ver = first(doc.include_versions)
+            open(joinpath(outpath, "index.html"), "w") do io
+                println(io, "<!--This file is automatically generated by MultiDocumenter.jl-->")
+                println(io, "<meta http-equiv=\"refresh\" content=\"0; url=./$(first_ver)/\"/>")
+            end
+        else
+            cp(doc.upstream, outpath; force = true)
+        end
 
         gitpath = joinpath(outpath, ".git")
         if isdir(gitpath)
@@ -370,6 +475,10 @@ function make_output_structure(
         end
 
         fix_canonical_url!(doc; canonical, root_dir = dir)
+
+        if doc.include_versions !== nothing && !isempty(doc.include_versions)
+            _apply_include_versions(doc, outpath, doc.include_versions)
+        end
     end
 
     open(joinpath(dir, "index.html"), "w") do io
