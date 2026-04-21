@@ -94,11 +94,10 @@ using MultiDocumenter
             url = "https://example.org/pkg.jl/"
             MultiDocumenter.inject_all_versions_link(html, url)
             content = read(html, String)
-            @test occursin("documenter-see-all-versions-option", content)
-            @test occursin("See All Versions", content)
-            @test occursin("seeAllVersionsTarget", content)
-            @test occursin("__SIENNA_SEE_ALL_VERSIONS__", content)
-            @test occursin("var seeAllVersionsTarget=\"" * url * "\"", content)
+            @test occursin("multidoc-see-all-versions-config", content)
+            @test occursin("\"label\":\"See All Versions\"", content)
+            @test occursin("\"sentinel\":\"__MULTIDOC_SEE_ALL_VERSIONS__\"", content)
+            @test occursin("\"target\":\"" * url * "\"", content)
             @test occursin("</body>", content)
         end
     end
@@ -112,7 +111,22 @@ using MultiDocumenter
             MultiDocumenter.inject_all_versions_link(html, "https://x.org/")
             second_run = read(html, String)
             @test first_run == second_run
-            @test count("documenter-see-all-versions-option", first_run) == 1
+            @test count("multidoc-see-all-versions-config", first_run) == 1
+        end
+    end
+
+    @testset "inject_all_versions_link replaces legacy inline script" begin
+        mktempdir() do dir
+            html = joinpath(dir, "page.html")
+            write(
+                html,
+                """<html><body><script>(function(){/* documenter-see-all-versions-option */var url="https://old.example/";})();</script></body></html>""",
+            )
+            MultiDocumenter.inject_all_versions_link(html, "https://new.example/")
+            content = read(html, String)
+            @test !occursin("documenter-see-all-versions-option", content)
+            @test occursin("multidoc-see-all-versions-config", content)
+            @test occursin("\"target\":\"https://new.example/\"", content)
         end
     end
 
