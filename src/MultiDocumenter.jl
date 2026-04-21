@@ -358,6 +358,10 @@ end
 
 # --- include_versions: copy only selected version dirs and add "All versions" link ---
 
+const SEE_ALL_VERSIONS_SENTINEL = "__MULTIDOC_SEE_ALL_VERSIONS__"
+const SEE_ALL_VERSIONS_LABEL = "See All Versions"
+const SEE_ALL_VERSIONS_CONFIG_ID = "multidoc-see-all-versions-config"
+
 """Derive GitHub Pages URL from git clone URL (e.g. https://github.com/org/pkg.jl.git → https://org.github.io/pkg.jl/)."""
 function giturl_to_ghpages_url(giturl::AbstractString)
     m = match(r"github\.com[/:]([^/]+)/([^/#?]+?)(\.git)?$", giturl)
@@ -403,39 +407,43 @@ function rewrite_versions_js(outpath::String, kept_versions::Vector{String})
     return nothing
 end
 
-"""Inject a 'See All Versions' option into the Documenter version selector dropdown that opens the all_versions_url (must be absolute, e.g. package gh-pages from giturl).
+"""Inject a compact config block consumed by assets/default/see_all_versions.js.
 
-The option uses a sentinel `value` (not a URL) so Documenter's own change handler does not navigate the current tab. The real URL is in `seeAllVersionsTarget`. Injection is deferred until the selector has options (load, polling, MutationObserver).
-
-When the script is already present (e.g. from cloned HTML), replace `seeAllVersionsTarget` or legacy `var url=` so the link stays correct."""
+The JS reads this config and appends a non-navigating sentinel option to Documenter's
+version selector that opens `all_versions_url` in a new tab. Existing legacy inline
+scripts are replaced with this config block.
+"""
 function inject_all_versions_link(html_path::String, all_versions_url::String)
     isempty(all_versions_url) && return false
     # Require absolute URL so the link goes to the package site, not the aggregate
     startswith(all_versions_url, "http://") || startswith(all_versions_url, "https://") || return false
     content = read(html_path, String)
-    esc_url = replace(all_versions_url, "\\" => "\\\\", "\"" => "\\\"")
-    if occursin("documenter-see-all-versions-option", content)
-        new_content = replace(content, r"var seeAllVersionsTarget=\"[^\"]*\"" => "var seeAllVersionsTarget=\"" * esc_url * "\""; count = 1)
-        if new_content == content
-            # Legacy injected script used `var url="..."` for the external link
-            new_content = replace(content, r"var url=\"[^\"]*\"" => "var url=\"" * esc_url * "\""; count = 1)
-        end
+    esc_url = replace(all_versions_url, "\"" => "\\\"")
+    config = """<script id="$(SEE_ALL_VERSIONS_CONFIG_ID)" type="application/json">{"target":"$(esc_url)","sentinel":"$(SEE_ALL_VERSIONS_SENTINEL)","label":"$(SEE_ALL_VERSIONS_LABEL)"}</script>"""
+
+    # Normalize old inline variants to the config model
+    old_inline_rgx = r"<script>\(function\(\)\{/\* documenter-see-all-versions-option \*/[\s\S]*?\}\)\(\);\</script>"
+    if occursin(old_inline_rgx, content)
+        new_content = replace(content, old_inline_rgx => config; count = 1)
         if new_content != content
             write(html_path, new_content)
             return true
         end
         return false
     end
-    # Sentinel option value (not a URL) so Documenter does not assign window.location from select.value.
-    # Capture-phase change listener; defer appending until #documenter-version-selector has options.
-    snippet =
-        """<script>(function(){/* documenter-see-all-versions-option */var S=\"__SIENNA_SEE_ALL_VERSIONS__\";var seeAllVersionsTarget=\"""" *
-        esc_url *
-        """\";function qs(){return document.querySelectorAll('.docs-version-selector select,#documenter-version-selector');}function addOpt(){var a=qs(),i,s,o,n;for(i=0;i<a.length;i++){s=a[i];n=s.options.length;if(!n)continue;if(s.options[n-1].value===S)continue;if(s.dataset.seeAllPrevIdx===undefined)s.dataset.seeAllPrevIdx=String(Math.max(0,s.selectedIndex));o=document.createElement('option');o.textContent='See All Versions';o.value=S;s.appendChild(o);}}function anyEmpty(){var a=qs(),j;for(j=0;j<a.length;j++){if(!a[j].options.length)return true;}return false;}function poll(){var t=0;function f(){addOpt();if(!anyEmpty()||t>=120)return;t++;setTimeout(f,50);}setTimeout(f,0);}function startup(){addOpt();if(anyEmpty())poll();var el=document.getElementById('documenter-version-selector');if(el&&window.MutationObserver)(new MutationObserver(addOpt)).observe(el,{childList:true,subtree:true});}var rst=false;document.addEventListener('change',function(e){if(rst)return;var t=e.target;if(t.tagName!=='SELECT')return;if(!t.closest('.docs-version-selector')&&t.id!=='documenter-version-selector')return;if(t.value!==S){var ix=t.selectedIndex,k,all=qs();for(k=0;k<all.length;k++)all[k].dataset.seeAllPrevIdx=String(ix);return;}e.preventDefault();e.stopImmediatePropagation();rst=true;window.open(seeAllVersionsTarget,'_blank','noopener');var p=parseInt(t.dataset.seeAllPrevIdx,10);if(isNaN(p)||p<0)p=0;var mx=t.options.length-2;if(mx<0)mx=0;var idx=Math.min(Math.max(0,p),mx);all=qs();for(var k=0;k<all.length;k++){var s=all[k];if(s.options.length){s.selectedIndex=idx;s.dataset.seeAllPrevIdx=String(idx);}}rst=false;},true);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startup);else startup();window.addEventListener('load',addOpt);})();</script>"""
-    if !occursin("</body>", content)
+
+    existing_config_rgx = r"<script id=\"multidoc-see-all-versions-config\" type=\"application/json\">\{[\s\S]*?\}</script>"
+    if occursin(existing_config_rgx, content)
+        new_content = replace(content, existing_config_rgx => config; count = 1)
+        if new_content != content
+            write(html_path, new_content)
+            return true
+        end
         return false
     end
-    new_content = replace(content, "</body>" => snippet * "\n</body>"; count = 1)
+
+    occursin("</body>", content) || return false
+    new_content = replace(content, "</body>" => config * "\n</body>"; count = 1)
     write(html_path, new_content)
     return true
 end
@@ -603,6 +611,7 @@ function inject_styles_and_global_navigation(
         search_engine.engine.inject_styles!(custom_stylesheets)
     end
     pushfirst!(custom_stylesheets, joinpath("assets", "default", "multidoc.css"))
+    pushfirst!(custom_scripts, joinpath("assets", "default", "see_all_versions.js"))
     pushfirst!(custom_scripts, joinpath("assets", "default", "multidoc_injector.js"))
 
     @sync for (root, _, files) in walkdir(dir)
