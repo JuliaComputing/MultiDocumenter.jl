@@ -96,7 +96,9 @@ using MultiDocumenter
             content = read(html, String)
             @test occursin("documenter-see-all-versions-option", content)
             @test occursin("See All Versions", content)
-            @test occursin(url, content)
+            @test occursin("seeAllVersionsTarget", content)
+            @test occursin("__SIENNA_SEE_ALL_VERSIONS__", content)
+            @test occursin("var seeAllVersionsTarget=\"" * url * "\"", content)
             @test occursin("</body>", content)
         end
     end

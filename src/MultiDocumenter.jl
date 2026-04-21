@@ -404,7 +404,10 @@ function rewrite_versions_js(outpath::String, kept_versions::Vector{String})
 end
 
 """Inject a 'See All Versions' option into the Documenter version selector dropdown that opens the all_versions_url (must be absolute, e.g. package gh-pages from giturl).
-When the script is already present (e.g. from cloned HTML), replace the URL inside it with the current all_versions_url."""
+
+The option uses a sentinel `value` (not a URL) so Documenter's own change handler does not navigate the current tab. The real URL is in `seeAllVersionsTarget`. Injection is deferred until the selector has options (load, polling, MutationObserver).
+
+When the script is already present (e.g. from cloned HTML), replace `seeAllVersionsTarget` or legacy `var url=` so the link stays correct."""
 function inject_all_versions_link(html_path::String, all_versions_url::String)
     isempty(all_versions_url) && return false
     # Require absolute URL so the link goes to the package site, not the aggregate
@@ -412,16 +415,23 @@ function inject_all_versions_link(html_path::String, all_versions_url::String)
     content = read(html_path, String)
     esc_url = replace(all_versions_url, "\\" => "\\\\", "\"" => "\\\"")
     if occursin("documenter-see-all-versions-option", content)
-        # Script already present (e.g. cloned docs from old org); replace URL so link is correct
-        new_content = replace(content, r"var url=\"[^\"]*\"" => "var url=\"" * esc_url * "\""; count = 1)
+        new_content = replace(content, r"var seeAllVersionsTarget=\"[^\"]*\"" => "var seeAllVersionsTarget=\"" * esc_url * "\""; count = 1)
+        if new_content == content
+            # Legacy injected script used `var url="..."` for the external link
+            new_content = replace(content, r"var url=\"[^\"]*\"" => "var url=\"" * esc_url * "\""; count = 1)
+        end
         if new_content != content
             write(html_path, new_content)
             return true
         end
         return false
     end
-    # Run after DOM ready. Add "See All Versions" to every version select (sidebar + navbar). Use one capture-phase listener on document so we handle any version select; stop propagation when "See All Versions" is chosen so Documenter does not navigate the current tab.
-    snippet = """<script>(function(){/* documenter-see-all-versions-option */function run(){var url="$(esc_url)";var sels=document.querySelectorAll('.docs-version-selector select,#documenter-version-selector');for(var i=0;i<sels.length;i++){var sel=sels[i];var n=sel.options.length;if(n&&sel.options[n-1].value===url)continue;sel.dataset.seeAllPrevIdx=sel.selectedIndex;var opt=document.createElement('option');opt.textContent='See All Versions';opt.value=url;sel.appendChild(opt);}var resetting=false;document.addEventListener('change',function(e){if(resetting)return;var sel=e.target;if(sel.tagName!=='SELECT')return;if(!sel.closest('.docs-version-selector')&&sel.id!=='documenter-version-selector')return;if(sel.value===url){e.preventDefault();e.stopImmediatePropagation();resetting=true;window.open(url,'_blank');var prevIdx=parseInt(sel.dataset.seeAllPrevIdx,10);if(isNaN(prevIdx))prevIdx=0;var m=sel.options.length-1;var idx=prevIdx>=0&&prevIdx<m?prevIdx:0;for(var j=0;j<sels.length;j++){sels[j].selectedIndex=idx;sels[j].dataset.seeAllPrevIdx=idx;}sel.dispatchEvent(new Event('change',{bubbles:true}));resetting=false;}else{sel.dataset.seeAllPrevIdx=sel.selectedIndex;}},true);}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',run);}else{run();}})();</script>"""
+    # Sentinel option value (not a URL) so Documenter does not assign window.location from select.value.
+    # Capture-phase change listener; defer appending until #documenter-version-selector has options.
+    snippet =
+        """<script>(function(){/* documenter-see-all-versions-option */var S=\"__SIENNA_SEE_ALL_VERSIONS__\";var seeAllVersionsTarget=\"""" *
+        esc_url *
+        """\";function qs(){return document.querySelectorAll('.docs-version-selector select,#documenter-version-selector');}function addOpt(){var a=qs(),i,s,o,n;for(i=0;i<a.length;i++){s=a[i];n=s.options.length;if(!n)continue;if(s.options[n-1].value===S)continue;if(s.dataset.seeAllPrevIdx===undefined)s.dataset.seeAllPrevIdx=String(Math.max(0,s.selectedIndex));o=document.createElement('option');o.textContent='See All Versions';o.value=S;s.appendChild(o);}}function anyEmpty(){var a=qs(),j;for(j=0;j<a.length;j++){if(!a[j].options.length)return true;}return false;}function poll(){var t=0;function f(){addOpt();if(!anyEmpty()||t>=120)return;t++;setTimeout(f,50);}setTimeout(f,0);}function startup(){addOpt();if(anyEmpty())poll();var el=document.getElementById('documenter-version-selector');if(el&&window.MutationObserver)(new MutationObserver(addOpt)).observe(el,{childList:true,subtree:true});}var rst=false;document.addEventListener('change',function(e){if(rst)return;var t=e.target;if(t.tagName!=='SELECT')return;if(!t.closest('.docs-version-selector')&&t.id!=='documenter-version-selector')return;if(t.value!==S){var ix=t.selectedIndex,k,all=qs();for(k=0;k<all.length;k++)all[k].dataset.seeAllPrevIdx=String(ix);return;}e.preventDefault();e.stopImmediatePropagation();rst=true;window.open(seeAllVersionsTarget,'_blank','noopener');var p=parseInt(t.dataset.seeAllPrevIdx,10);if(isNaN(p)||p<0)p=0;var mx=t.options.length-2;if(mx<0)mx=0;var idx=Math.min(Math.max(0,p),mx);all=qs();for(var k=0;k<all.length;k++){var s=all[k];if(s.options.length){s.selectedIndex=idx;s.dataset.seeAllPrevIdx=String(idx);}}rst=false;},true);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startup);else startup();window.addEventListener('load',addOpt);})();</script>"""
     if !occursin("</body>", content)
         return false
     end
