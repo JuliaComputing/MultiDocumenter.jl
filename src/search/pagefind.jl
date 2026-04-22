@@ -34,9 +34,9 @@ function build_search_index(root, docs, config, rootpath)
     # To fix this, we wrap all uses of npx and npm inside `node() do ...`
     # which will automatically adjust the necessary environment variables.
     node() do _
-        if !success(Cmd(`$(npx) pagefind -V`; dir = root))
+        if !success(Cmd(`$(npx()) pagefind -V`; dir = root))
             @info "Installing pagefind into $root."
-            if !success(Cmd(`$(npm) install pagefind`; dir = root))
+            if !success(Cmd(`$(npm()) install pagefind`; dir = root))
                 error("Could not install pagefind.")
             end
         end
@@ -47,7 +47,7 @@ function build_search_index(root, docs, config, rootpath)
         mktempdir() do dir
             # pagefind doesn't look at symlinks, so we resolve them here:
             cp(root, dir; follow_symlinks = true, force = true)
-            run(`$(npx) pagefind --site $(dir) --output-path $(out_path) --glob $(pattern) --root-selector article`)
+            run(`$(npx()) pagefind --site $(dir) --output-path $(out_path) --glob $(pattern) --root-selector article`)
         end
     end
 
