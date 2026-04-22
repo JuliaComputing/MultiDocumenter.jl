@@ -40,8 +40,10 @@ using MultiDocumenter
     end
 
     @testset "cp_select_versions with symlink stable" begin
-        Sys.iswindows() && @test_broken "symlinks not reliably testable on Windows"
-        Sys.iswindows() && return
+        if Sys.iswindows()
+            @test_broken false # symlinks not reliably testable on Windows
+            return
+        end
         mktempdir() do src
             write(joinpath(src, "versions.js"), "var DOC_VERSIONS = [];")
             mkdir(joinpath(src, "v5.5.0"))
