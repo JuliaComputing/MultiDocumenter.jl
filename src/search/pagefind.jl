@@ -2,6 +2,17 @@ module PageFind
 using NodeJS_22_jll: npx, npm, node
 using HypertextLiteral: @htl
 
+# NodeJS_22_jll exposes `npx` / `npm` as either plain path strings (newer Julia / JLL)
+# or zero-arg callables returning the path.
+function _jll_executable_path(x)::String
+    x isa AbstractString && return String(x)
+    try
+        return String(x())
+    catch
+        return String(x)
+    end
+end
+
 function inject_script!(custom_scripts, rootpath)
     pushfirst!(custom_scripts, joinpath("assets", "default", "pagefind_integration.js"))
     pushfirst!(custom_scripts, joinpath("pagefind", "pagefind.js"))
@@ -34,11 +45,17 @@ function build_search_index(root, docs, config, rootpath)
     # To fix this, we wrap all uses of npx and npm inside `node() do ...`
     # which will automatically adjust the necessary environment variables.
     node() do _
-        if !success(Cmd(`$(npx()) pagefind -V`; dir = root))
+        npx_exe = _jll_executable_path(npx)
+        npm_exe = _jll_executable_path(npm)
+        version_ok = cd(root) do
+            success(Cmd([npx_exe, "pagefind", "-V"]))
+        end
+        if !version_ok
             @info "Installing pagefind into $root."
-            if !success(Cmd(`$(npm()) install pagefind`; dir = root))
-                error("Could not install pagefind.")
+            installed = cd(root) do
+                success(Cmd([npm_exe, "install", "pagefind"]))
             end
+            installed || error("Could not install pagefind.")
         end
 
         pattern = "*/{$(join(config.index_versions, ","))}/**/*.{html}"
@@ -47,7 +64,22 @@ function build_search_index(root, docs, config, rootpath)
         mktempdir() do dir
             # pagefind doesn't look at symlinks, so we resolve them here:
             cp(root, dir; follow_symlinks = true, force = true)
-            run(`$(npx()) pagefind --site $(dir) --output-path $(out_path) --glob $(pattern) --root-selector article`)
+            run(
+                Cmd(
+                    [
+                        npx_exe,
+                        "pagefind",
+                        "--site",
+                        dir,
+                        "--output-path",
+                        out_path,
+                        "--glob",
+                        pattern,
+                        "--root-selector",
+                        "article",
+                    ],
+                ),
+            )
         end
     end
 
