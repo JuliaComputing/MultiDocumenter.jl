@@ -66,13 +66,15 @@ using MultiDocumenter
     @testset "rewrite_versions_js" begin
         mktempdir() do dir
             vjs = joinpath(dir, "versions.js")
-            write(vjs, """
-            var DOC_VERSIONS = [
-                "stable",
-                "v1.0",
-                "dev",
-            ];
-            """)
+            write(
+                vjs, """
+                var DOC_VERSIONS = [
+                    "stable",
+                    "v1.0",
+                    "dev",
+                ];
+                """
+            )
             MultiDocumenter.rewrite_versions_js(dir, ["stable", "dev"])
             content = read(vjs, String)
             @test occursin("DOC_VERSIONS", content)
@@ -85,12 +87,14 @@ using MultiDocumenter
     @testset "inject_all_versions_link" begin
         mktempdir() do dir
             html = joinpath(dir, "page.html")
-            write(html, """
-            <!DOCTYPE html>
-            <html><head></head><body>
-            <div class="docs-version-selector"><select><option>stable</option></select></div>
-            </body></html>
-            """)
+            write(
+                html, """
+                <!DOCTYPE html>
+                <html><head></head><body>
+                <div class="docs-version-selector"><select><option>stable</option></select></div>
+                </body></html>
+                """
+            )
             url = "https://example.org/pkg.jl/"
             MultiDocumenter.inject_all_versions_link(html, url)
             content = read(html, String)
