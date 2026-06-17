@@ -142,7 +142,7 @@ of the redirect `<meta http-equiv="refresh" ...>` tag.
 get_meta_redirect_url(indexhtml_path::AbstractString) =
     get_meta_redirect_url(Gumbo.parsehtml(read(indexhtml_path, String)), indexhtml_path)
 
-function get_meta_redirect_url(html::Gumbo.HTMLDocument, indexhtml_path::Union{AbstractString,Nothing}=nothing)
+function get_meta_redirect_url(html::Gumbo.HTMLDocument, indexhtml_path::Union{AbstractString, Nothing} = nothing)
     for e in AbstractTrees.PreOrderDFS(html.root)
         e isa Gumbo.HTMLElement || continue
         Gumbo.tag(e) == :meta || continue
