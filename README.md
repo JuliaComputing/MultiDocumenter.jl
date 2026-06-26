@@ -75,6 +75,27 @@ MultiDocumenter.make(
 )
 ```
 
+### Limiting copied versions and linking to all upstream versions
+
+When aggregating many packages, you can copy only selected deployed versions to reduce storage size of the final website:
+
+```julia
+MultiDocumenter.MultiDocRef(
+    upstream = joinpath(clonedir, "SomePackage"),
+    path = "SomePackage",
+    name = "SomePackage.jl",
+    giturl = "https://github.com/SomeOrg/SomePackage.jl.git",
+    include_versions = ["stable", "dev"],
+    # optional: defaults to URL derived from giturl
+    all_versions_url = "https://someorg.github.io/SomePackage.jl/",
+)
+```
+
+- `include_versions` copies only those version directories (plus root files like `index.html` and `versions.js`).
+- `versions.js` is rewritten to include only copied versions.
+- The version selector gets a `See All Versions` option that opens `all_versions_url` in a new tab.
+- If `all_versions_url` is omitted, MultiDocumenter derives it from `giturl` for GitHub repositories.
+
 ![example](sample.png)
 
 ## Deployment

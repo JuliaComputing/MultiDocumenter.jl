@@ -5,6 +5,10 @@ using Test
     include("documentertools.jl")
 end
 
+@testset "include_versions patch" begin
+    include("include_versions.jl")
+end
+
 clonedir = mktempdir()
 outpath = joinpath(@__DIR__, "out")
 rootpath = "/MultiDocumenter.jl/"
