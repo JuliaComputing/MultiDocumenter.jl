@@ -1,6 +1,7 @@
 module PageFind
 using NodeJS_22_jll: npx, npm, node
 using HypertextLiteral: @htl
+import ..warn_unindexed_refs
 
 """
     npm_command(shim, args...; dir) -> Cmd
@@ -59,6 +60,8 @@ function build_search_index(root, docs, config, rootpath)
                 error("Could not install pagefind.")
             end
         end
+
+        warn_unindexed_refs(root, docs, config.index_versions)
 
         pattern = "*/{$(join(config.index_versions, ","))}/**/*.{html}"
 

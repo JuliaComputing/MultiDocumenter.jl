@@ -5,6 +5,10 @@ using Test
     include("documentertools.jl")
 end
 
+@testset "version selection" begin
+    include("version_selection.jl")
+end
+
 @testset "pagefind" begin
     include("pagefind.jl")
 end
